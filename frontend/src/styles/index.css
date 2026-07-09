@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+  }
+
+  body {
+    font-family: 'Jost', system-ui, sans-serif;
+    color: #0a0a0a;
+    background: #ffffff;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 400;
+    line-height: 1.15;
+  }
+
+  ::selection {
+    background: #c9a96e;
+    color: #ffffff;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: #f5f5f5; }
+  ::-webkit-scrollbar-thumb { background: #c9a96e; border-radius: 2px; }
+
+  input, textarea, select {
+    font-family: 'Jost', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-obsidian text-white px-8 py-3.5 text-xs tracking-widest uppercase font-sans font-medium transition-all duration-300 hover:bg-obsidian-700 active:scale-95;
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 bg-gold-gradient text-white px-8 py-3.5 text-xs tracking-widest uppercase font-sans font-medium transition-all duration-300 hover:opacity-90 active:scale-95 shadow-gold;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 border border-obsidian text-obsidian px-8 py-3.5 text-xs tracking-widest uppercase font-sans font-medium transition-all duration-300 hover:bg-obsidian hover:text-white active:scale-95;
+  }
+
+  .btn-outline-gold {
+    @apply inline-flex items-center justify-center gap-2 border border-gold-500 text-gold-600 px-8 py-3.5 text-xs tracking-widest uppercase font-sans font-medium transition-all duration-300 hover:bg-gold-500 hover:text-white active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 text-obsidian px-4 py-2 text-xs tracking-widest uppercase font-sans font-medium transition-all duration-300 hover:text-gold-600 active:scale-95;
+  }
+
+  /* Inputs */
+  .input-luxury {
+    @apply w-full border-b border-obsidian-200 bg-transparent px-0 py-3 text-sm font-sans placeholder-obsidian-400 focus:outline-none focus:border-gold-500 transition-colors duration-200;
+  }
+
+  .input-luxury-box {
+    @apply w-full border border-obsidian-200 bg-transparent px-4 py-3 text-sm font-sans placeholder-obsidian-400 focus:outline-none focus:border-gold-500 transition-colors duration-200;
+  }
+
+  /* Cards */
+  .card-luxury {
+    @apply bg-white shadow-luxury hover:shadow-luxury-lg transition-shadow duration-300;
+  }
+
+  /* Gold divider */
+  .divider-gold {
+    @apply h-px bg-gradient-to-r from-transparent via-gold-400 to-transparent;
+  }
+
+  /* Section headings */
+  .section-title {
+    @apply font-display text-4xl md:text-5xl text-obsidian font-light tracking-wide;
+  }
+
+  .section-subtitle {
+    @apply text-xs tracking-widest uppercase text-gold-600 font-sans;
+  }
+
+  /* Gold badge */
+  .badge-gold {
+    @apply inline-block bg-gold-gradient text-white text-xs tracking-widest uppercase px-3 py-1 font-sans;
+  }
+
+  .badge-sale {
+    @apply inline-block bg-red-600 text-white text-xs tracking-widest uppercase px-3 py-1 font-sans;
+  }
+
+  /* Skeleton */
+  .skeleton {
+    @apply bg-gradient-to-r from-obsidian-100 via-obsidian-50 to-obsidian-100 bg-[length:200%_100%] animate-shimmer;
+  }
+
+  /* Page container */
+  .page-container {
+    @apply max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-16;
+  }
+
+  /* Product grid */
+  .product-grid {
+    @apply grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6;
+  }
+
+  /* Admin sidebar link */
+  .admin-nav-link {
+    @apply flex items-center gap-3 px-4 py-3 text-sm font-sans text-obsidian-400 hover:text-gold-500 hover:bg-obsidian-800 transition-all duration-200 rounded;
+  }
+
+  .admin-nav-link.active {
+    @apply text-gold-400 bg-obsidian-800;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  .animate-delay-100 { animation-delay: 100ms; }
+  .animate-delay-200 { animation-delay: 200ms; }
+  .animate-delay-300 { animation-delay: 300ms; }
+  .animate-delay-400 { animation-delay: 400ms; }
+
+  .writing-vertical { writing-mode: vertical-rl; }
+}
+
+/* Swiper overrides */
+.swiper-pagination-bullet { background: #c9a96e !important; }
+.swiper-button-next, .swiper-button-prev { color: #c9a96e !important; }
