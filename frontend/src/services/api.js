@@ -127,6 +127,7 @@ export const adminAPI = {
   getUsers: (params) => api.get('/admin/users', { params }),
   banUser: (id, data) => api.put(`/admin/users/${id}/ban`, data),
   getAllOrders: (params) => api.get('/admin/orders', { params }),
+  getOrderDetail: (id) => api.get(`/admin/orders/${id}`),
   updateOrderStatus: (id, data) => api.put(`/admin/orders/${id}/status`, data),
   getReviews: (params) => api.get('/admin/reviews', { params }),
   approveReview: (id, data) => api.put(`/admin/reviews/${id}/approve`, data),

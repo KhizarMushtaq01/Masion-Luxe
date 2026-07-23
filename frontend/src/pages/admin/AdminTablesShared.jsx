@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search, ChevronDown } from 'lucide-react'
 import { adminAPI } from '../../services/api'
@@ -106,7 +107,7 @@ export function AdminOrders() {
         ) : data?.orders?.map(order => (
           <tr key={order._id} className="hover:bg-cream transition-colors">
             <td className="px-4 py-3">
-              <p className="text-sm font-sans font-medium">#{order.orderNumber}</p>
+              <Link to={`/admin/orders/${order._id}`} className="text-sm font-sans font-medium hover:text-gold-600 transition-colors">#{order.orderNumber}</Link>
               {order.trackingNumber && <p className="text-xs text-gold-600 font-sans">Track: {order.trackingNumber}</p>}
             </td>
             <td className="px-4 py-3">
