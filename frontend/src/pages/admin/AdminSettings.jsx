@@ -60,7 +60,7 @@ export default function AdminSettings() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs tracking-widest uppercase font-sans text-obsidian-500 mb-1.5">Tax Rate (%)</label>
-              <input type="number" step="0.01" value={form.taxRate * 100} onChange={e => setForm({ ...form, taxRate: Number(e.target.value) / 100 })} className="input-luxury-box w-full text-sm" />
+              <input type="number" step="0.01" value={Math.round(form.taxRate * 10000) / 100} onChange={e => setForm({ ...form, taxRate: Number(e.target.value) / 100 })} className="input-luxury-box w-full text-sm" />
             </div>
             <div>
               <label className="block text-xs tracking-widest uppercase font-sans text-obsidian-500 mb-1.5">Standard Shipping ($)</label>
