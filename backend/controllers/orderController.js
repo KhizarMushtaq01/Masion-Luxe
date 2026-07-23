@@ -245,21 +245,32 @@ exports.updateOrderStatus = async (req, res, next) => {
 exports.confirmOrderPayment = async (orderId, { paymentStatus = 'paid' } = {}) => {
   const order = await Order.findById(orderId).populate('user', 'firstName lastName email');
   if (!order) throw new Error(`Order ${orderId} not found.`);
-  if (order.orderStatus === 'confirmed') return order; // idempotent
 
-  order.orderStatus = 'confirmed';
-  order.paymentStatus = paymentStatus;
-  order.statusHistory.push({ status: 'confirmed', note: 'Payment confirmed', updatedBy: order.user._id });
-  await order.save();
+  // Atomically transition non-confirmed -> confirmed. The filter on orderStatus
+  // ensures that if two calls race (e.g. duplicate webhook delivery), only one
+  // of them can ever match and proceed to the side effects below.
+  const updated = await Order.findOneAndUpdate(
+    { _id: orderId, orderStatus: { $ne: 'confirmed' } },
+    {
+      $set: { orderStatus: 'confirmed', paymentStatus },
+      $push: { statusHistory: { status: 'confirmed', note: 'Payment confirmed', updatedBy: order.user._id } }
+    },
+    { new: true }
+  ).populate('user', 'firstName lastName email');
 
-  await User.findByIdAndUpdate(order.user._id, {
-    $inc: { totalOrders: 1, totalSpent: order.total, loyaltyPoints: Math.floor(order.total) }
+  if (!updated) {
+    // Already confirmed by a concurrent/duplicate call — idempotent no-op.
+    return order;
+  }
+
+  await User.findByIdAndUpdate(updated.user._id, {
+    $inc: { totalOrders: 1, totalSpent: updated.total, loyaltyPoints: Math.floor(updated.total) }
   });
 
-  await sendTemplateEmail('orderConfirmed', order.user.email, {
-    firstName: order.user.firstName,
-    ...order.toObject()
+  await sendTemplateEmail('orderConfirmed', updated.user.email, {
+    firstName: updated.user.firstName,
+    ...updated.toObject()
   });
 
-  return order;
+  return updated;
 };
