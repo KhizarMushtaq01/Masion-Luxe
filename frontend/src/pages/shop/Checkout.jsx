@@ -7,7 +7,7 @@ import useAuthStore from '../../store/authStore'
 import { orderAPI, paymentAPI } from '../../services/api'
 import toast from 'react-hot-toast'
 import StripeCardForm from '../../components/checkout/StripeCardForm'
-// PayPal's PayPalPaymentButton import is added in Task 13.
+import PayPalPaymentButton from '../../components/checkout/PayPalPaymentButton'
 
 const steps = ['Shipping', 'Payment', 'Review']
 
@@ -250,8 +250,12 @@ export default function Checkout() {
                     <StripeCardForm orderId={pendingOrder._id} amount={total} onPaid={() => { clearCart(); navigate(`/order-success/${pendingOrder._id}`) }} />
                     <button onClick={() => setStep(1)} className="btn-outline w-full">Back</button>
                   </>
+                ) : paymentMethod === 'paypal' && pendingOrder ? (
+                  <>
+                    <PayPalPaymentButton orderId={pendingOrder._id} onPaid={() => { clearCart(); navigate(`/order-success/${pendingOrder._id}`) }} />
+                    <button onClick={() => setStep(1)} className="btn-outline w-full">Back</button>
+                  </>
                 ) : null}
-                {/* paymentMethod === 'paypal' branch is added in Task 13, once PayPalPaymentButton exists */}
 
                 <p className="text-xs text-obsidian-400 font-sans text-center">
                   By placing your order you agree to our Terms of Service and Privacy Policy.
