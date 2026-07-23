@@ -299,7 +299,7 @@ export default function Checkout() {
               <div className="flex justify-between"><span className="text-obsidian-500">Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
               {discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>−${discount.toFixed(2)}</span></div>}
               <div className="flex justify-between"><span className="text-obsidian-500">Shipping</span><span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span></div>
-              <div className="flex justify-between"><span className="text-obsidian-500">Tax (8%)</span><span>${tax.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-obsidian-500">Tax ({(settings.taxRate * 100).toFixed(0)}%)</span><span>${tax.toFixed(2)}</span></div>
             </div>
             <div className="h-px bg-obsidian-200" />
             <div className="flex justify-between items-center">
