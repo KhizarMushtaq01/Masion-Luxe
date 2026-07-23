@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search, ChevronDown } from 'lucide-react'
 import { adminAPI } from '../../services/api'
+import useAuthStore from '../../store/authStore'
 import toast from 'react-hot-toast'
 
 // ─── Shared table wrapper ─────────────────────────────────────────────────────
@@ -189,6 +190,8 @@ export function AdminUsers() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const qc = useQueryClient()
+  const { user: viewer } = useAuthStore()
+  const isSuperadmin = viewer?.role === 'superadmin'
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users', { page, search }],
@@ -203,6 +206,18 @@ export function AdminUsers() {
       await qc.invalidateQueries(['admin-users'])
       toast.success(`User ${user.isBanned ? 'unbanned' : 'banned'}.`)
     } catch { toast.error('Failed to update user.') }
+  }
+
+  const handleRoleChange = async (targetUser, newRole) => {
+    const confirmMsg = `Change ${targetUser.firstName} ${targetUser.lastName}'s role to "${newRole}"?`
+    if (!window.confirm(confirmMsg)) return
+    try {
+      await adminAPI.updateUserRole(targetUser._id, newRole)
+      await qc.invalidateQueries(['admin-users'])
+      toast.success(`Role updated to ${newRole}.`)
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update role.')
+    }
   }
 
   return (
@@ -238,7 +253,18 @@ export function AdminUsers() {
               </div>
             </td>
             <td className="px-4 py-3">
-              <span className={`text-[10px] px-2 py-0.5 font-sans ${user.role==='admin'||user.role==='superadmin' ? 'bg-gold-50 text-gold-700' : 'bg-obsidian-50 text-obsidian-500'}`}>{user.role}</span>
+              {isSuperadmin && user.role !== 'superadmin' ? (
+                <select
+                  value={user.role}
+                  onChange={e => handleRoleChange(user, e.target.value)}
+                  className="text-[10px] px-2 py-1 font-sans bg-obsidian-50 border border-obsidian-100 focus:outline-none focus:border-gold-400"
+                >
+                  <option value="user">user</option>
+                  <option value="admin">admin</option>
+                </select>
+              ) : (
+                <span className={`text-[10px] px-2 py-0.5 font-sans ${user.role==='admin'||user.role==='superadmin' ? 'bg-gold-50 text-gold-700' : 'bg-obsidian-50 text-obsidian-500'}`}>{user.role}</span>
+              )}
             </td>
             <td className="px-4 py-3"><span className="text-sm font-sans">{user.totalOrders||0}</span></td>
             <td className="px-4 py-3"><span className="text-sm font-sans">${(user.totalSpent||0).toFixed(2)}</span></td>
