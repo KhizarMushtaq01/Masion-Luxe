@@ -24,6 +24,8 @@ exports.createOrder = async (req, res, next) => {
       }
     }
 
+    const initialStatus = paymentMethod === 'cod' ? 'confirmed' : 'pending_payment';
+
     const order = await Order.create({
       user: req.user._id,
       items,
@@ -37,8 +39,8 @@ exports.createOrder = async (req, res, next) => {
       couponCode,
       total,
       notes,
-      orderStatus: paymentMethod === 'cod' ? 'confirmed' : 'pending',
-      statusHistory: [{ status: 'pending', note: 'Order placed', updatedBy: req.user._id }]
+      orderStatus: initialStatus,
+      statusHistory: [{ status: initialStatus, note: 'Order placed', updatedBy: req.user._id }]
     });
 
     // Update stock
@@ -48,19 +50,20 @@ exports.createOrder = async (req, res, next) => {
       });
     }
 
-    // Update user stats
-    await User.findByIdAndUpdate(req.user._id, {
-      $inc: { totalOrders: 1, totalSpent: total, loyaltyPoints: Math.floor(total) }
-    });
-
     // Clear cart
     await Cart.findOneAndUpdate({ user: req.user._id }, { items: [] });
 
-    // Send confirmation email
-    await sendTemplateEmail('orderConfirmed', req.user.email, {
-      firstName: req.user.firstName,
-      ...order.toObject()
-    });
+    if (initialStatus === 'confirmed') {
+      // COD orders are confirmed immediately — send confirmation now and update stats.
+      await User.findByIdAndUpdate(req.user._id, {
+        $inc: { totalOrders: 1, totalSpent: total, loyaltyPoints: Math.floor(total) }
+      });
+
+      await sendTemplateEmail('orderConfirmed', req.user.email, {
+        firstName: req.user.firstName,
+        ...order.toObject()
+      });
+    }
 
     await ActivityLog.create({
       user: req.user._id,
@@ -235,4 +238,28 @@ exports.updateOrderStatus = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+// Shared helper: marks an order confirmed once payment has actually succeeded.
+// Called by the Stripe webhook and the PayPal capture route (not an HTTP route itself).
+exports.confirmOrderPayment = async (orderId, { paymentStatus = 'paid' } = {}) => {
+  const order = await Order.findById(orderId).populate('user', 'firstName lastName email');
+  if (!order) throw new Error(`Order ${orderId} not found.`);
+  if (order.orderStatus === 'confirmed') return order; // idempotent
+
+  order.orderStatus = 'confirmed';
+  order.paymentStatus = paymentStatus;
+  order.statusHistory.push({ status: 'confirmed', note: 'Payment confirmed', updatedBy: order.user._id });
+  await order.save();
+
+  await User.findByIdAndUpdate(order.user._id, {
+    $inc: { totalOrders: 1, totalSpent: order.total, loyaltyPoints: Math.floor(order.total) }
+  });
+
+  await sendTemplateEmail('orderConfirmed', order.user.email, {
+    firstName: order.user.firstName,
+    ...order.toObject()
+  });
+
+  return order;
 };
