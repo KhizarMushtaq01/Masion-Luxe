@@ -1,5 +1,6 @@
 const Product = require('../models/Product');
 const { Category } = require('../models/index');
+const { uploadImage, deleteImage } = require('../utils/cloudinary');
 
 // @desc    Get all products (with filters)
 // @route   GET /api/products
@@ -152,6 +153,51 @@ exports.searchProducts = async (req, res, next) => {
     }).limit(Number(limit)).select('name images basePrice salePrice slug category').populate('category', 'name');
 
     res.json({ success: true, products });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Upload product images
+// @route   POST /api/products/:id/images
+exports.uploadProductImages = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found.' });
+
+    const files = req.files || [];
+    if (files.length === 0) {
+      return res.status(400).json({ success: false, message: 'No image files provided.' });
+    }
+
+    const uploaded = await Promise.all(
+      files.map(file => uploadImage(file.buffer, 'maison-luxe/products'))
+    );
+
+    uploaded.forEach(({ url, publicId }) => {
+      product.images.push({ url, publicId, isPrimary: product.images.length === 0 });
+    });
+
+    await product.save();
+    res.json({ success: true, images: product.images });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Delete a single product image
+// @route   DELETE /api/products/:id/images/:publicId
+exports.deleteProductImage = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found.' });
+
+    const publicId = decodeURIComponent(req.params.publicId);
+    product.images = product.images.filter(img => img.publicId !== publicId);
+    await product.save();
+
+    await deleteImage(publicId);
+    res.json({ success: true, images: product.images });
   } catch (err) {
     next(err);
   }
