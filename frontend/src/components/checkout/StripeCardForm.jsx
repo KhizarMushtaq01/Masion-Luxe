@@ -51,10 +51,33 @@ function InnerForm({ onPaid, submitting, setSubmitting }) {
 export default function StripeCardForm({ orderId, amount, onPaid }) {
   const [clientSecret, setClientSecret] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
-    paymentAPI.createIntent(amount, orderId).then(({ data }) => setClientSecret(data.clientSecret))
-  }, [orderId, amount])
+    let cancelled = false
+    setLoadError('')
+    setClientSecret(null)
+    paymentAPI.createIntent(amount, orderId)
+      .then(({ data }) => {
+        if (!cancelled) setClientSecret(data.clientSecret)
+      })
+      .catch((err) => {
+        if (!cancelled) setLoadError(err.response?.data?.message || 'Failed to load payment form. Please try again.')
+      })
+    return () => { cancelled = true }
+  }, [orderId, amount, retryKey])
+
+  if (loadError) {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs text-red-500 font-sans">{loadError}</p>
+        <button type="button" onClick={() => setRetryKey(k => k + 1)} className="btn-outline w-full text-xs">
+          Retry
+        </button>
+      </div>
+    )
+  }
 
   if (!clientSecret) {
     return <div className="h-40 skeleton" />

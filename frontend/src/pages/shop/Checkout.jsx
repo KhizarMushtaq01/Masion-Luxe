@@ -106,6 +106,11 @@ export default function Checkout() {
       setStep(2)
       return
     }
+    if (pendingOrder) {
+      // Already created an order for this checkout attempt — don't create another.
+      setStep(2)
+      return
+    }
     setCreatingOrder(true)
     try {
       const { data } = await orderAPI.createOrder(buildOrderPayload())
