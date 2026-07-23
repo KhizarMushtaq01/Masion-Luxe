@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { useQuery } from '@tanstack/react-query'
 import { Check, ChevronRight } from 'lucide-react'
 import { useCartStore } from '../../store/cartStore'
 import useAuthStore from '../../store/authStore'
-import { orderAPI, paymentAPI } from '../../services/api'
+import { orderAPI, paymentAPI, settingsAPI } from '../../services/api'
 import toast from 'react-hot-toast'
 import StripeCardForm from '../../components/checkout/StripeCardForm'
 import PayPalPaymentButton from '../../components/checkout/PayPalPaymentButton'
@@ -22,10 +23,17 @@ export default function Checkout() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
 
+  const { data: settingsData } = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => settingsAPI.getSettings().then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+  })
+  const settings = settingsData?.settings || { taxRate: 0.08, freeShippingThreshold: 500, standardShippingCost: 25 }
+
   const subtotal = getSubtotal()
   const discount = cart?.discountAmount || 0
-  const shipping = subtotal - discount >= 500 ? 0 : 25
-  const tax = (subtotal - discount) * 0.08
+  const shipping = (subtotal - discount) >= settings.freeShippingThreshold ? 0 : settings.standardShippingCost
+  const tax = (subtotal - discount) * settings.taxRate
   const total = subtotal - discount + shipping + tax
 
   const { register, handleSubmit, formState: { errors } } = useForm({
