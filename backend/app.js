@@ -49,7 +49,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/newsletter', require('./routes/newsletter'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/analytics', require('./routes/analytics'));
-// app.use('/api/settings', require('./routes/settings')); // uncomment in Task 14
+app.use('/api/settings', require('./routes/settings'));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
