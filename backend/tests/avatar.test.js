@@ -52,4 +52,18 @@ describe('PUT /api/users/avatar', () => {
       .attach('avatar', Buffer.from('fake-image-bytes'), 'photo.jpg');
     expect(res.status).toBe(401);
   });
+
+  it('returns 200 with new avatar even if old-image cleanup fails', async () => {
+    const user = await createTestUser({ overrides: { avatar: { url: 'old.jpg', publicId: 'maison-luxe/avatars/old' } } });
+    deleteImage.mockRejectedValueOnce(new Error('cloudinary down'));
+
+    const res = await request(app)
+      .put('/api/users/avatar')
+      .set(authHeaderFor(user))
+      .attach('avatar', Buffer.from('fake-image-bytes'), 'photo.jpg');
+
+    expect(res.status).toBe(200);
+    expect(res.body.avatar).toEqual({ url: 'https://res.cloudinary.com/demo/avatar.jpg', publicId: 'maison-luxe/avatars/abc' });
+    expect(deleteImage).toHaveBeenCalledWith('maison-luxe/avatars/old');
+  });
 });

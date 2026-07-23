@@ -58,7 +58,11 @@ exports.updateAvatar = async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     if (previousPublicId) {
-      await deleteImage(previousPublicId);
+      try {
+        await deleteImage(previousPublicId);
+      } catch (cleanupErr) {
+        console.error('[AVATAR] Failed to delete previous avatar image:', cleanupErr.message);
+      }
     }
 
     await sendTemplateEmail('avatarChanged', user.email, { firstName: user.firstName });
