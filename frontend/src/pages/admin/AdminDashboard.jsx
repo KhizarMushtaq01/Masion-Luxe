@@ -8,7 +8,7 @@ import { TrendingUp, TrendingDown, Users, ShoppingBag, Package, DollarSign, Aler
 import { adminAPI } from '../../services/api'
 
 const STATUS_COLORS = {
-  pending:'#f59e0b', confirmed:'#3b82f6', processing:'#6366f1',
+  pending:'#f59e0b', pending_payment:'#f59e0b', confirmed:'#3b82f6', processing:'#6366f1',
   shipped:'#8b5cf6', delivered:'#10b981', cancelled:'#ef4444'
 }
 

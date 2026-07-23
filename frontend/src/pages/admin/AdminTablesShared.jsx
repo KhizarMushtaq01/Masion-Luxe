@@ -34,9 +34,9 @@ function AdminTable({ headers, children, pagination, onPageChange }) {
 }
 
 // ─── AdminOrders ──────────────────────────────────────────────────────────────
-const ORDER_STATUSES = ['pending','confirmed','processing','shipped','out_for_delivery','delivered','cancelled','return_requested','returned']
+const ORDER_STATUSES = ['pending','pending_payment','confirmed','processing','shipped','out_for_delivery','delivered','cancelled','return_requested','returned']
 const STATUS_COLORS_MAP = {
-  pending:'amber', confirmed:'blue', processing:'indigo', shipped:'violet',
+  pending:'amber', pending_payment:'amber', confirmed:'blue', processing:'indigo', shipped:'violet',
   out_for_delivery:'purple', delivered:'green', cancelled:'red', return_requested:'orange', returned:'gray'
 }
 
