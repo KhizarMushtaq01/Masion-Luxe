@@ -356,3 +356,24 @@ exports.getActivityLogs = async (req, res, next) => {
     res.json({ success: true, logs, pagination: { total, page: Number(page), pages: Math.ceil(total / limit) } });
   } catch (err) { next(err); }
 };
+
+exports.updateUserRole = async (req, res, next) => {
+  try {
+    const { role } = req.body;
+    if (!['user', 'admin'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'Role must be "user" or "admin".' });
+    }
+
+    const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    await ActivityLog.create({
+      user: req.user._id,
+      action: 'admin.user_role_changed',
+      resourceId: user._id,
+      details: { email: user.email, newRole: role }
+    });
+
+    res.json({ success: true, message: `Role updated to ${role}.`, user });
+  } catch (err) { next(err); }
+};
