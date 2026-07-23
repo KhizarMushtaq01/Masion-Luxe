@@ -196,7 +196,15 @@ exports.deleteProductImage = async (req, res, next) => {
     product.images = product.images.filter(img => img.publicId !== publicId);
     await product.save();
 
-    await deleteImage(publicId);
+    // Wrap Cloudinary cleanup in separate try/catch to isolate failure
+    if (publicId) {
+      try {
+        await deleteImage(publicId);
+      } catch (cleanupErr) {
+        console.error('[PRODUCT IMAGE] Failed to delete Cloudinary asset:', cleanupErr.message);
+      }
+    }
+
     res.json({ success: true, images: product.images });
   } catch (err) {
     next(err);

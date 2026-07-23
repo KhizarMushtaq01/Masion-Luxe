@@ -61,4 +61,32 @@ describe('DELETE /api/products/:id/images/:publicId', () => {
     expect(res.status).toBe(200);
     expect(res.body.images).toHaveLength(0);
   });
+
+  it('rejects non-admin users', async () => {
+    const user = await createTestUser({ role: 'user' });
+    const product = await makeProduct();
+    const encodedId = encodeURIComponent('maison-luxe/products/existing');
+
+    const res = await request(app)
+      .delete(`/api/products/${product._id}/images/${encodedId}`)
+      .set(authHeaderFor(user));
+
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 200 even if Cloudinary cleanup fails', async () => {
+    const { deleteImage } = require('../utils/cloudinary');
+    deleteImage.mockRejectedValueOnce(new Error('Cloudinary network error'));
+
+    const admin = await createTestUser({ role: 'admin' });
+    const product = await makeProduct();
+    const encodedId = encodeURIComponent('maison-luxe/products/existing');
+
+    const res = await request(app)
+      .delete(`/api/products/${product._id}/images/${encodedId}`)
+      .set(authHeaderFor(admin));
+
+    expect(res.status).toBe(200);
+    expect(res.body.images).toHaveLength(0);
+  });
 });
