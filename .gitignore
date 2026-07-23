@@ -153,10 +153,6 @@ pnpm-lock.yaml
 .nx/workspace-data
 .swc
 .parcel-cache/
-.next/
-out/
-dist/
-dist-ssr/
 *.local
 
 # ============================================
@@ -170,6 +166,7 @@ __pycache__/
 env/
 venv/
 .env
+.env.example
 .venv
 env.bak/
 venv.bak/
@@ -189,8 +186,6 @@ dmypy.json
 .pytype/
 cython_debug/
 *.egg-info/
-dist/
-build/
 develop-eggs/
 downloads/
 eggs/
@@ -249,7 +244,6 @@ Gemfile.lock
 hs_err_pid*
 replay_pid*
 .mtj.tmp/
-# Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
 # Package Files
@@ -482,14 +476,12 @@ vendor/
 # ============================================
 # Hugo
 # ============================================
-/public/
 /resources/
 .hugo_build.lock
 
 # ============================================
 # Gatsby
 # ============================================
-public/
 .cache/
 
 # ============================================
@@ -907,7 +899,6 @@ android/.gradle/
 # ============================================
 .DS_Store
 node_modules/
-/dist/
 *.local
 .env.local
 .env.*.local
@@ -926,7 +917,6 @@ pnpm-debug.log*
 # ============================================
 # Angular
 # ============================================
-dist/
 tmp/
 out-tsc/
 bazel-out/
@@ -953,8 +943,6 @@ aio/generated/
 # ============================================
 .DS_Store
 node_modules/
-/build/
-/dist/
 /.svelte-kit/
 /package
 .env
@@ -964,12 +952,6 @@ node_modules/
 .output
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-
-# ============================================
-# Next.js
-# ============================================
-.next/
-out/
 
 # ============================================
 # Generic environment / secrets
@@ -1007,3 +989,41 @@ specs/
 # ============================================
 worktrees/
 *.worktree/
+
+# ============================================
+# BUILD OUTPUTS - ALL LOCATIONS (CRITICAL FOR NEXT.JS/REACT)
+# ============================================
+# Root level build folders
+dist/
+build/
+.next/
+out/
+dist-ssr/
+
+# ANY level build folders (includes public/dist, public/build, etc.)
+**/dist
+**/build
+**/.next
+**/out
+**/dist-ssr
+
+# Public folder specific (explicitly ignore)
+public/dist/
+public/build/
+public/.next/
+public/out/
+
+# ============================================
+# Vercel deployment specific
+# ============================================
+.vercel
+.output
+vercel.json
+
+# ============================================
+# Next.js specific
+# ============================================
+.next/
+out/
+**/.next
+**/out
