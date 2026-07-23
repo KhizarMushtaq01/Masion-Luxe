@@ -52,6 +52,7 @@ const AdminCoupons = lazy(() => import('./pages/admin/AdminCoupons'))
 const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'))
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'))
 const AdminActivityLogs = lazy(() => import('./pages/admin/AdminActivityLogs'))
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
 
 // ─── Protected Routes ─────────────────────────────────────────────────────────
 function ProtectedRoute({ children }) {
@@ -143,6 +144,7 @@ export default function App() {
           <Route path="categories" element={<AdminCategories />} />
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="activity-logs" element={<AdminActivityLogs />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

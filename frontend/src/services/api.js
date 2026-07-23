@@ -136,3 +136,9 @@ export const adminAPI = {
   getActivityLogs: (params) => api.get('/admin/activity-logs', { params }),
   getAnalytics: (params) => api.get('/analytics/overview', { params }),
 }
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+export const settingsAPI = {
+  getSettings: () => api.get('/settings'),
+  updateSettings: (data) => api.put('/admin/settings', data),
+}

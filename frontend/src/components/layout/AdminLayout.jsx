@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Package, ShoppingBag, Users, Star,
-  Tag, Grid, BarChart3, Activity, LogOut, Menu, X, ChevronRight
+  Tag, Grid, BarChart3, Activity, LogOut, Menu, X, ChevronRight, Settings
 } from 'lucide-react'
 import { useState } from 'react'
 import useAuthStore from '../../store/authStore'
@@ -16,6 +16,7 @@ const NAV = [
   { href: '/admin/categories',   label: 'Categories',    icon: Grid },
   { href: '/admin/analytics',    label: 'Analytics',     icon: BarChart3 },
   { href: '/admin/activity-logs',label: 'Activity Logs', icon: Activity },
+  { href: '/admin/settings',     label: 'Settings',      icon: Settings },
 ]
 
 export default function AdminLayout() {
