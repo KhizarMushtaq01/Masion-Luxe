@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { sendTemplateEmail } = require('../utils/email');
 const { ActivityLog } = require('../models/index');
+const { uploadImage, deleteImage } = require('../utils/cloudinary');
 
 // @desc    Update profile
 // @route   PUT /api/users/profile
@@ -44,11 +45,21 @@ exports.updateProfile = async (req, res, next) => {
 // @route   PUT /api/users/avatar
 exports.updateAvatar = async (req, res, next) => {
   try {
-    const { avatarUrl, publicId } = req.body;
-    const user = await User.findById(req.user._id);
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No image file provided.' });
+    }
 
-    user.avatar = { url: avatarUrl, publicId: publicId || '' };
+    const user = await User.findById(req.user._id);
+    const previousPublicId = user.avatar?.publicId;
+
+    const { url, publicId } = await uploadImage(req.file.buffer, 'maison-luxe/avatars');
+
+    user.avatar = { url, publicId };
     await user.save({ validateBeforeSave: false });
+
+    if (previousPublicId) {
+      await deleteImage(previousPublicId);
+    }
 
     await sendTemplateEmail('avatarChanged', user.email, { firstName: user.firstName });
 
