@@ -1,16 +1,6 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: process.env.EMAIL_SECURE === 'true',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-};
+const getResendClient = () => new Resend(process.env.RESEND_API_KEY);
 
 const baseTemplate = (content, preheader = '') => `
 <!DOCTYPE html>
@@ -281,24 +271,29 @@ const emailTemplates = {
 
 const sendEmail = async ({ to, subject, html }) => {
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.log('⚠️  Email credentials not configured. Email not sent to:', to);
-      console.log('Subject:', subject);
+    if (!process.env.RESEND_API_KEY) {
+      console.log('[EMAIL] Resend API key not configured. Email not sent to:', to);
+      console.log('[EMAIL] Subject:', subject);
       return { success: true, preview: true };
     }
 
-    const transporter = createTransporter();
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || `"Maison Luxe" <${process.env.EMAIL_USER}>`,
+    const resend = getResendClient();
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'Maison Luxe <onboarding@resend.dev>',
       to,
       subject,
       html
     });
 
-    console.log(`✉️  Email sent to ${to}: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+    if (error) {
+      console.error('[EMAIL] Resend error:', error.message || error);
+      return { success: false, error: error.message || String(error) };
+    }
+
+    console.log(`[EMAIL] Sent to ${to}: ${data.id}`);
+    return { success: true, id: data.id };
   } catch (error) {
-    console.error('❌ Email error:', error.message);
+    console.error('[EMAIL] error:', error.message);
     return { success: false, error: error.message };
   }
 };
