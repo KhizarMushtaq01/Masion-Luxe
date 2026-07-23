@@ -15,11 +15,11 @@ const settingsSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 settingsSchema.statics.getSettings = async function () {
-  let settings = await this.findOne();
-  if (!settings) {
-    settings = await this.create({});
-  }
-  return settings;
+  return this.findOneAndUpdate(
+    {},
+    { $setOnInsert: {} },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 };
 
 module.exports = mongoose.model('Settings', settingsSchema);
