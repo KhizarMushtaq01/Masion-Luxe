@@ -95,4 +95,32 @@ describe('confirmOrderPayment', () => {
     await expect(confirmOrderPayment('507f1f77bcf86cd799439011', { paymentStatus: 'paid' }))
       .rejects.toThrow();
   });
+
+  it('does not double-increment stats when two confirmations race concurrently', async () => {
+    const user = await createTestUser();
+    const product = await makeProduct();
+    const order = await Order.create({
+      user: user._id,
+      items: [{ product: product._id, name: product.name, quantity: 1, price: 50, totalPrice: 50 }],
+      shippingAddress, paymentMethod: 'card', subtotal: 50, total: 50, orderStatus: 'pending_payment'
+    });
+
+    const [first, second] = await Promise.all([
+      confirmOrderPayment(order._id, { paymentStatus: 'paid' }),
+      confirmOrderPayment(order._id, { paymentStatus: 'paid' }),
+    ]);
+
+    expect(first.orderStatus).toBe('confirmed');
+    expect(second.orderStatus).toBe('confirmed');
+
+    const refreshedUser = await User.findById(user._id);
+    expect(refreshedUser.totalOrders).toBe(1);
+    expect(refreshedUser.totalSpent).toBe(50);
+
+    const refreshedOrder = await Order.findById(order._id);
+    expect(refreshedOrder.orderStatus).toBe('confirmed');
+    expect(refreshedOrder.statusHistory.filter((h) => h.status === 'confirmed')).toHaveLength(1);
+
+    expect(sendTemplateEmail).toHaveBeenCalledTimes(1);
+  });
 });

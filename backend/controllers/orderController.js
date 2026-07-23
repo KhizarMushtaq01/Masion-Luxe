@@ -260,7 +260,10 @@ exports.confirmOrderPayment = async (orderId, { paymentStatus = 'paid' } = {}) =
 
   if (!updated) {
     // Already confirmed by a concurrent/duplicate call — idempotent no-op.
-    return order;
+    // Re-fetch rather than returning the pre-update `order` snapshot: a
+    // concurrent caller may have flipped the status to confirmed after we
+    // read `order` but before our own update attempt, so `order` can be stale.
+    return await Order.findById(orderId).populate('user', 'firstName lastName email');
   }
 
   await User.findByIdAndUpdate(updated.user._id, {
