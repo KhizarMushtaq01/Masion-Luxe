@@ -1,6 +1,7 @@
 const { Order, Cart, ActivityLog } = require('../models/index');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const Settings = require('../models/Settings');
 const { sendTemplateEmail } = require('../utils/email');
 
 // @desc    Create order
@@ -9,8 +10,7 @@ exports.createOrder = async (req, res, next) => {
   try {
     const {
       items, shippingAddress, billingAddress,
-      paymentMethod, subtotal, shippingCost, taxAmount,
-      discountAmount, couponCode, total, notes
+      paymentMethod, subtotal, discountAmount, couponCode, notes
     } = req.body;
 
     // Validate stock
@@ -24,6 +24,15 @@ exports.createOrder = async (req, res, next) => {
       }
     }
 
+    // Server is authoritative for money math: recompute shipping/tax/total from
+    // Settings and the trusted subtotal/discountAmount, ignoring any client-submitted
+    // shippingCost/taxAmount/total values.
+    const settings = await Settings.getSettings();
+    const netSubtotal = subtotal - (discountAmount || 0);
+    const shippingCost = netSubtotal >= settings.freeShippingThreshold ? 0 : settings.standardShippingCost;
+    const taxAmount = netSubtotal * settings.taxRate;
+    const total = netSubtotal + shippingCost + taxAmount;
+
     const initialStatus = paymentMethod === 'cod' ? 'confirmed' : 'pending_payment';
 
     const order = await Order.create({
@@ -33,8 +42,8 @@ exports.createOrder = async (req, res, next) => {
       billingAddress: billingAddress || shippingAddress,
       paymentMethod,
       subtotal,
-      shippingCost: shippingCost || 0,
-      taxAmount: taxAmount || 0,
+      shippingCost,
+      taxAmount,
       discountAmount: discountAmount || 0,
       couponCode,
       total,
