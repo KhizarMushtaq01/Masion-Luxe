@@ -3,6 +3,14 @@ const router = express.Router();
 const { protect } = require('../middleware/auth');
 const { Order } = require('../models/index');
 const { confirmOrderPayment } = require('../controllers/orderController');
+const paypal = require('@paypal/checkout-server-sdk');
+
+function paypalClient() {
+  const environment = process.env.PAYPAL_MODE === 'live'
+    ? new paypal.core.LiveEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET)
+    : new paypal.core.SandboxEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET);
+  return new paypal.core.PayPalHttpClient(environment);
+}
 
 router.post('/create-intent', protect, async (req, res) => {
   try {
@@ -61,6 +69,43 @@ router.post('/stripe/webhook', async (req, res) => {
       );
     }
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post('/paypal/create-order', protect, async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
+
+    const request = new paypal.orders.OrdersCreateRequest();
+    request.requestBody({
+      intent: 'CAPTURE',
+      purchase_units: [{ amount: { currency_code: 'USD', value: order.total.toFixed(2) }, reference_id: order._id.toString() }]
+    });
+
+    const paypalOrder = await paypalClient().execute(request);
+    res.json({ success: true, paypalOrderId: paypalOrder.result.id });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post('/paypal/capture-order', protect, async (req, res) => {
+  try {
+    const { paypalOrderId, orderId } = req.body;
+    const request = new paypal.orders.OrdersCaptureRequest(paypalOrderId);
+    request.requestBody({});
+    const capture = await paypalClient().execute(request);
+
+    if (capture.result.status !== 'COMPLETED') {
+      return res.status(400).json({ success: false, message: 'PayPal payment was not completed.' });
+    }
+
+    const order = await confirmOrderPayment(orderId, { paymentStatus: 'paid' });
+    res.json({ success: true, order });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
