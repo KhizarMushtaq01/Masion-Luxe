@@ -77,7 +77,7 @@ router.post('/stripe/webhook', async (req, res) => {
 router.post('/paypal/create-order', protect, async (req, res) => {
   try {
     const { orderId } = req.body;
-    const order = await Order.findById(orderId);
+    const order = await Order.findOne({ _id: orderId, user: req.user._id });
     if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
 
     const request = new paypal.orders.OrdersCreateRequest();
@@ -96,6 +96,12 @@ router.post('/paypal/create-order', protect, async (req, res) => {
 router.post('/paypal/capture-order', protect, async (req, res) => {
   try {
     const { paypalOrderId, orderId } = req.body;
+
+    const order = await Order.findOne({ _id: orderId, user: req.user._id });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found.' });
+    }
+
     const request = new paypal.orders.OrdersCaptureRequest(paypalOrderId);
     request.requestBody({});
     const capture = await paypalClient().execute(request);
@@ -104,8 +110,13 @@ router.post('/paypal/capture-order', protect, async (req, res) => {
       return res.status(400).json({ success: false, message: 'PayPal payment was not completed.' });
     }
 
-    const order = await confirmOrderPayment(orderId, { paymentStatus: 'paid' });
-    res.json({ success: true, order });
+    const capturedReferenceId = capture.result.purchase_units?.[0]?.reference_id;
+    if (capturedReferenceId !== orderId) {
+      return res.status(409).json({ success: false, message: 'This PayPal payment does not match the specified order.' });
+    }
+
+    const confirmedOrder = await confirmOrderPayment(orderId, { paymentStatus: 'paid' });
+    res.json({ success: true, order: confirmedOrder });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

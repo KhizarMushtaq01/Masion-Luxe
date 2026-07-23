@@ -33,8 +33,9 @@ afterAll(async () => { await closeTestDB(); });
 afterEach(async () => { await clearTestDB(); jest.clearAllMocks(); });
 
 async function makeOrder(user) {
-  const category = await Category.create({ name: 'Bags' });
-  const product = await Product.create({ name: 'Bag', description: 'd', category: category._id, basePrice: 60, stock: 5 });
+  const unique = `${Date.now()}-${Math.random()}`;
+  const category = await Category.create({ name: `Bags-${unique}` });
+  const product = await Product.create({ name: `Bag-${unique}`, description: 'd', category: category._id, basePrice: 60, stock: 5 });
   return Order.create({
     user: user._id,
     items: [{ product: product._id, name: product.name, quantity: 1, price: 60, totalPrice: 60 }],
@@ -54,17 +55,95 @@ describe('POST /api/payment/paypal/create-order', () => {
     expect(res.status).toBe(200);
     expect(res.body.paypalOrderId).toBe('PAYPAL-ORDER-1');
   });
+
+  it('returns 404 when the order does not exist', async () => {
+    mockExecute.mockResolvedValue({ result: { id: 'PAYPAL-ORDER-1' } });
+    const user = await createTestUser();
+
+    const res = await request(app)
+      .post('/api/payment/paypal/create-order')
+      .set(authHeaderFor(user))
+      .send({ orderId: '64b64b64b64b64b64b64b64b' });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 404 when the order belongs to a different user', async () => {
+    mockExecute.mockResolvedValue({ result: { id: 'PAYPAL-ORDER-1' } });
+    const owner = await createTestUser();
+    const attacker = await createTestUser();
+    const order = await makeOrder(owner);
+
+    const res = await request(app)
+      .post('/api/payment/paypal/create-order')
+      .set(authHeaderFor(attacker))
+      .send({ orderId: order._id.toString() });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 401 when no auth header is provided', async () => {
+    const user = await createTestUser();
+    const order = await makeOrder(user);
+
+    const res = await request(app)
+      .post('/api/payment/paypal/create-order')
+      .send({ orderId: order._id.toString() });
+
+    expect(res.status).toBe(401);
+  });
 });
 
 describe('POST /api/payment/paypal/capture-order', () => {
   it('captures payment and confirms the Maison Luxe order', async () => {
-    mockExecute.mockResolvedValue({ result: { status: 'COMPLETED' } });
     const user = await createTestUser();
     const order = await makeOrder(user);
+    mockExecute.mockResolvedValue({ result: { status: 'COMPLETED', purchase_units: [{ reference_id: order._id.toString() }] } });
 
     const res = await request(app).post('/api/payment/paypal/capture-order').set(authHeaderFor(user)).send({ paypalOrderId: 'PAYPAL-ORDER-1', orderId: order._id.toString() });
 
     expect(res.status).toBe(200);
     expect(confirmOrderPayment).toHaveBeenCalledWith(order._id.toString(), { paymentStatus: 'paid' });
+  });
+
+  it('returns 404 when the order belongs to a different user and does not call confirmOrderPayment', async () => {
+    const owner = await createTestUser();
+    const attacker = await createTestUser();
+    const order = await makeOrder(owner);
+    mockExecute.mockResolvedValue({ result: { status: 'COMPLETED', purchase_units: [{ reference_id: order._id.toString() }] } });
+
+    const res = await request(app)
+      .post('/api/payment/paypal/capture-order')
+      .set(authHeaderFor(attacker))
+      .send({ paypalOrderId: 'PAYPAL-ORDER-1', orderId: order._id.toString() });
+
+    expect(res.status).toBe(404);
+    expect(confirmOrderPayment).not.toHaveBeenCalled();
+  });
+
+  it('rejects a capture whose reference_id does not match the requested order and does not call confirmOrderPayment', async () => {
+    const user = await createTestUser();
+    const order = await makeOrder(user);
+    const otherOrder = await makeOrder(user);
+    mockExecute.mockResolvedValue({ result: { status: 'COMPLETED', purchase_units: [{ reference_id: otherOrder._id.toString() }] } });
+
+    const res = await request(app)
+      .post('/api/payment/paypal/capture-order')
+      .set(authHeaderFor(user))
+      .send({ paypalOrderId: 'PAYPAL-ORDER-1', orderId: order._id.toString() });
+
+    expect([400, 409]).toContain(res.status);
+    expect(confirmOrderPayment).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 when no auth header is provided', async () => {
+    const user = await createTestUser();
+    const order = await makeOrder(user);
+
+    const res = await request(app)
+      .post('/api/payment/paypal/capture-order')
+      .send({ paypalOrderId: 'PAYPAL-ORDER-1', orderId: order._id.toString() });
+
+    expect(res.status).toBe(401);
   });
 });
