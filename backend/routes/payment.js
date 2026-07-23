@@ -55,7 +55,10 @@ router.post('/stripe/webhook', async (req, res) => {
       }
     } else if (event.type === 'payment_intent.payment_failed') {
       const paymentIntent = event.data.object;
-      await Order.findOneAndUpdate({ stripePaymentIntentId: paymentIntent.id }, { paymentStatus: 'failed' });
+      await Order.findOneAndUpdate(
+        { stripePaymentIntentId: paymentIntent.id, orderStatus: { $ne: 'confirmed' } },
+        { paymentStatus: 'failed' }
+      );
     }
     res.json({ success: true });
   } catch (err) {

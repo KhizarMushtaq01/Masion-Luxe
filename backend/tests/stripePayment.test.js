@@ -68,4 +68,49 @@ describe('POST /api/payment/stripe/webhook', () => {
     expect(res.status).toBe(200);
     expect(confirmOrderPayment).toHaveBeenCalledWith(order._id.toString(), { paymentStatus: 'paid' });
   });
+
+  it('marks the order as failed on payment_intent.payment_failed', async () => {
+    const user = await createTestUser();
+    const order = await makeOrder(user);
+    order.stripePaymentIntentId = 'pi_456';
+    await order.save();
+
+    mockConstructEvent.mockReturnValue({
+      type: 'payment_intent.payment_failed',
+      data: { object: { id: 'pi_456' } }
+    });
+
+    const res = await request(app)
+      .post('/api/payment/stripe/webhook')
+      .set('stripe-signature', 'test-sig')
+      .send(Buffer.from(JSON.stringify({ any: 'payload' })));
+
+    expect(res.status).toBe(200);
+    const updated = await Order.findById(order._id);
+    expect(updated.paymentStatus).toBe('failed');
+  });
+
+  it('does not downgrade an already-confirmed order on a late/out-of-order payment_intent.payment_failed event', async () => {
+    const user = await createTestUser();
+    const order = await makeOrder(user);
+    order.stripePaymentIntentId = 'pi_789';
+    order.orderStatus = 'confirmed';
+    order.paymentStatus = 'paid';
+    await order.save();
+
+    mockConstructEvent.mockReturnValue({
+      type: 'payment_intent.payment_failed',
+      data: { object: { id: 'pi_789' } }
+    });
+
+    const res = await request(app)
+      .post('/api/payment/stripe/webhook')
+      .set('stripe-signature', 'test-sig')
+      .send(Buffer.from(JSON.stringify({ any: 'payload' })));
+
+    expect(res.status).toBe(200);
+    const updated = await Order.findById(order._id);
+    expect(updated.paymentStatus).toBe('paid');
+    expect(updated.orderStatus).toBe('confirmed');
+  });
 });
