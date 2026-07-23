@@ -13,6 +13,7 @@ export default function AdminProductForm() {
   const qc = useQueryClient()
   const [saving, setSaving] = useState(false)
   const [imageUrls, setImageUrls] = useState([{ url: '', alt: '', isPrimary: true }])
+  const [uploadingImages, setUploadingImages] = useState(false)
   const [sizes, setSizes] = useState([])
   const [tags, setTags] = useState([])
   const [features, setFeatures] = useState([''])
@@ -81,6 +82,40 @@ export default function AdminProductForm() {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save product.')
     } finally { setSaving(false) }
+  }
+
+  const handleImageFilesSelected = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    if (!isEdit) {
+      toast.error('Save the product first, then upload images.')
+      return
+    }
+    setUploadingImages(true)
+    try {
+      const { data } = await productAPI.uploadImages(id, files)
+      setImageUrls(data.images)
+      toast.success('Images uploaded.')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to upload images.')
+    } finally {
+      setUploadingImages(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleImageDelete = async (img, i) => {
+    if (img.publicId && isEdit) {
+      try {
+        const { data } = await productAPI.deleteImage(id, img.publicId)
+        setImageUrls(data.images)
+        return
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Failed to delete image.')
+        return
+      }
+    }
+    setImageUrls(imageUrls.filter((_, j) => j !== i))
   }
 
   const F = ({ label, name, type='text', validation={}, half=false, placeholder='' }) => (
@@ -152,7 +187,7 @@ export default function AdminProductForm() {
                       Primary
                     </label>
                     {imageUrls.length > 1 && (
-                      <button type="button" onClick={() => setImageUrls(imageUrls.filter((_,j) => j !== i))} className="text-obsidian-300 hover:text-red-500 flex-shrink-0"><X size={14}/></button>
+                      <button type="button" onClick={() => handleImageDelete(img, i)} className="text-obsidian-300 hover:text-red-500 flex-shrink-0"><X size={14}/></button>
                     )}
                   </div>
                 ))}
@@ -160,6 +195,11 @@ export default function AdminProductForm() {
                   className="flex items-center gap-2 text-xs tracking-widest uppercase font-sans text-gold-600 hover:text-gold-700 transition-colors">
                   <Plus size={12}/> Add Image URL
                 </button>
+                <label className={`flex items-center gap-2 text-xs tracking-widest uppercase font-sans cursor-pointer transition-colors ${uploadingImages ? 'text-obsidian-300 pointer-events-none' : 'text-gold-600 hover:text-gold-700'}`}>
+                  <Plus size={12}/> {uploadingImages ? 'Uploading...' : 'Upload Images'}
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageFilesSelected} disabled={!isEdit} />
+                </label>
+                {!isEdit && <p className="text-xs text-obsidian-400 font-sans mt-1">Save the product first to enable image upload.</p>}
               </div>
             </div>
 

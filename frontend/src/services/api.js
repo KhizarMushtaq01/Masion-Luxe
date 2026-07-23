@@ -68,6 +68,12 @@ export const productAPI = {
   createProduct: (data) => api.post('/products', data),
   updateProduct: (id, data) => api.put(`/products/${id}`, data),
   deleteProduct: (id) => api.delete(`/products/${id}`),
+  uploadImages: (id, files) => {
+    const formData = new FormData()
+    files.forEach(f => formData.append('images', f))
+    return api.post(`/products/${id}/images`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  deleteImage: (id, publicId) => api.delete(`/products/${id}/images/${encodeURIComponent(publicId)}`),
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
