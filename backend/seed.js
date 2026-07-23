@@ -47,14 +47,14 @@ const price = (min, max) => parseFloat((Math.random() * (max - min) + min).toFix
 
 async function seed() {
   await mongoose.connect(process.env.MONGO_URI)
-  console.log('✅ Connected to MongoDB')
+  console.log('Connected to MongoDB')
 
   // Clear
   await Promise.all([
     User.deleteMany({}), Product.deleteMany({}),
     Category.deleteMany({}), Coupon.deleteMany({})
   ])
-  console.log('🗑  Cleared existing data')
+  console.log('Cleared existing data')
 
   // ─── Categories ─────────────────────────────────────────────────────────────
   const categories = await Category.insertMany([
@@ -68,7 +68,7 @@ async function seed() {
     { name: 'Kids', slug: 'kids', gender: 'kids', sortOrder: 8, isActive: true },
   ])
   const catMap = Object.fromEntries(categories.map(c => [c.slug, c._id]))
-  console.log(`✅ Created ${categories.length} categories`)
+  console.log(`Created ${categories.length} categories`)
 
   // ─── Users ───────────────────────────────────────────────────────────────────
   const adminUser = await User.create({
@@ -89,7 +89,7 @@ async function seed() {
     role: 'user', isEmailVerified: true,
     totalOrders: 1, totalSpent: 620.00, loyaltyPoints: 620,
   })
-  console.log('✅ Created 3 users (1 admin + 2 test users)')
+  console.log('Created 3 users (1 admin + 2 test users)')
   console.log('   Admin login: admin@maisonluxe.com / admin1234')
   console.log('   User login:  sophie@example.com / password123')
 
@@ -150,7 +150,7 @@ async function seed() {
   }))
 
   const savedProducts = await Product.insertMany(allProducts)
-  console.log(`✅ Created ${savedProducts.length} products`)
+  console.log(`Created ${savedProducts.length} products`)
 
   // ─── Coupons ─────────────────────────────────────────────────────────────────
   await Coupon.insertMany([
@@ -159,10 +159,10 @@ async function seed() {
     { code: 'FLAT100', discountType: 'fixed', discountValue: 100, minOrderAmount: 800, description: '$100 off orders over $800', isActive: true, validUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) },
     { code: 'SUMMER25', discountType: 'percentage', discountValue: 25, minOrderAmount: 1000, description: 'Summer sale — 25% off', isActive: false },
   ])
-  console.log('✅ Created 4 coupons')
+  console.log('Created 4 coupons')
 
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log('🎉 Database seeded successfully!')
+  console.log('Database seeded successfully!')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('Admin:   admin@maisonluxe.com / admin1234')
   console.log('User:    sophie@example.com / password123')
@@ -172,4 +172,4 @@ async function seed() {
   process.exit(0)
 }
 
-seed().catch(err => { console.error('❌ Seed failed:', err); process.exit(1) })
+seed().catch(err => { console.error('[ERROR] Seed failed:', err); process.exit(1) })

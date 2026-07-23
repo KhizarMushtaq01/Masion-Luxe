@@ -81,10 +81,10 @@ const emailTemplates = {
       <div class="highlight-box">
         <strong style="color:#c9a96e;letter-spacing:2px;font-size:12px;text-transform:uppercase">Your Member Benefits</strong>
         <p style="margin:12px 0 0;color:#555;font-size:14px;line-height:1.8">
-          ✦ &nbsp;Early access to new collections<br/>
-          ✦ &nbsp;Exclusive member-only events<br/>
-          ✦ &nbsp;Complimentary shipping on orders over $500<br/>
-          ✦ &nbsp;Dedicated concierge service
+          &bull; &nbsp;Early access to new collections<br/>
+          &bull; &nbsp;Exclusive member-only events<br/>
+          &bull; &nbsp;Complimentary shipping on orders over $500<br/>
+          &bull; &nbsp;Dedicated concierge service
         </p>
       </div>
       <p class="text">Please verify your email address to unlock all features of your account.</p>
@@ -154,7 +154,7 @@ const emailTemplates = {
       <div class="greeting">Profile updated.</div>
       <p class="text">Dear ${user.firstName}, the following changes were made to your account:</p>
       <div class="highlight-box">
-        ${changes.map(c => `<p style="margin:4px 0;font-size:14px;color:#555">✦ &nbsp;${c}</p>`).join('')}
+        ${changes.map(c => `<p style="margin:4px 0;font-size:14px;color:#555">&bull; &nbsp;${c}</p>`).join('')}
       </div>
       <p class="text">If you did not make these changes, please contact our support team immediately.</p>
     `)
