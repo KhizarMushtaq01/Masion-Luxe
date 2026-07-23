@@ -167,7 +167,7 @@ export default function AdminDashboard() {
             <Link to="/admin/products" className="text-xs tracking-widest uppercase font-sans text-gold-600 hover:text-gold-700 transition-colors">Manage</Link>
           </div>
           {lowStockProducts.length === 0 ? (
-            <p className="text-sm text-obsidian-400 font-sans py-4">All products are well-stocked. 🎉</p>
+            <p className="text-sm text-obsidian-400 font-sans py-4">All products are well-stocked.</p>
           ) : (
             <div className="space-y-0">
               {lowStockProducts.map(p => (

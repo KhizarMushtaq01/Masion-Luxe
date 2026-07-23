@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Package, Truck, Check, Clock, XCircle, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Package, Truck, Check, Clock, XCircle, RotateCcw, CheckCircle2 } from 'lucide-react'
 import { AccountLayout } from '../../components/auth/AccountLayout'
 import { orderAPI } from '../../services/api'
 import toast from 'react-hot-toast'
@@ -195,7 +195,7 @@ export default function AccountOrderDetail() {
             <h3 className="font-display text-lg mb-3">Payment</h3>
             <p className="text-sm font-sans text-obsidian-600 capitalize">{order.paymentMethod?.replace('_',' ')}</p>
             <p className={`text-xs font-sans mt-1 ${order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
-              {order.paymentStatus === 'paid' ? '✓ Payment confirmed' : `Status: ${order.paymentStatus}`}
+              {order.paymentStatus === 'paid' ? <span className="flex items-center gap-1"><CheckCircle2 size={12} /> Payment confirmed</span> : `Status: ${order.paymentStatus}`}
             </p>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Heart, ShoppingBag, Eye } from 'lucide-react'
+import { Heart, ShoppingBag, Eye, Star } from 'lucide-react'
 import { useCartStore, useWishlistStore } from '../../store/cartStore'
 import useAuthStore from '../../store/authStore'
 import { userAPI } from '../../services/api'
@@ -132,7 +132,7 @@ export default function ProductCard({ product, className = '' }) {
           <div className="flex items-center gap-1">
             <div className="flex">
               {[1,2,3,4,5].map(s => (
-                <span key={s} className={`text-[10px] ${s <= Math.round(product.ratings.average) ? 'text-gold-500' : 'text-obsidian-200'}`}>★</span>
+                <Star key={s} size={10} className={s <= Math.round(product.ratings.average) ? 'text-gold-500 fill-gold-500' : 'text-obsidian-200'} />
               ))}
             </div>
             <span className="text-[10px] text-obsidian-400 font-sans">({product.ratings.count})</span>

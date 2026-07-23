@@ -1,7 +1,7 @@
 // AccountDashboard.jsx
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ShoppingBag, Heart, MapPin, Clock, TrendingUp } from 'lucide-react'
+import { ShoppingBag, Heart, MapPin, Clock, TrendingUp, AlertTriangle } from 'lucide-react'
 import { AccountLayout } from '../../components/auth/AccountLayout'
 import { orderAPI, userAPI } from '../../services/api'
 import useAuthStore from '../../store/authStore'
@@ -36,7 +36,7 @@ export default function AccountDashboard() {
       <h1 className="font-display text-3xl mb-2">Welcome back, {user?.firstName}.</h1>
       {!user?.isEmailVerified && (
         <div className="bg-amber-50 border border-amber-200 p-4 mb-6 flex items-center gap-3">
-          <span className="text-amber-600 text-sm font-sans">⚠ Please verify your email address to unlock all features.</span>
+          <span className="text-amber-600 text-sm font-sans flex items-center gap-1.5"><AlertTriangle size={14} /> Please verify your email address to unlock all features.</span>
         </div>
       )}
 

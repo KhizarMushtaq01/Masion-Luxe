@@ -1,6 +1,6 @@
 // Cart.jsx
 import { Link, useNavigate } from 'react-router-dom'
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag } from 'lucide-react'
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag, Check } from 'lucide-react'
 import { useState } from 'react'
 import { useCartStore } from '../../store/cartStore'
 import useAuthStore from '../../store/authStore'
@@ -111,7 +111,7 @@ export default function Cart() {
           <div className="space-y-3 px-2">
             {['Secure 256-bit SSL encryption', 'Free shipping on orders over $500', '30-day free returns'].map(t => (
               <p key={t} className="text-xs text-obsidian-400 font-sans flex items-center gap-2">
-                <span className="text-gold-500">✦</span>{t}
+                <Check size={12} className="text-gold-500" />{t}
               </p>
             ))}
           </div>
