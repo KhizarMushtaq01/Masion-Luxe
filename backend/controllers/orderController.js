@@ -286,3 +286,18 @@ exports.confirmOrderPayment = async (orderId, { paymentStatus = 'paid' } = {}) =
 
   return updated;
 };
+
+// @desc    Get single order detail (admin)
+// @route   GET /api/admin/orders/:id
+exports.getOrderDetail = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'firstName lastName email phone')
+      .populate('items.product', 'name images slug')
+      .populate('statusHistory.updatedBy', 'firstName lastName');
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
+    res.json({ success: true, order });
+  } catch (err) {
+    next(err);
+  }
+};
