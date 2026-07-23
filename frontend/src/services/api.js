@@ -45,7 +45,11 @@ export const authAPI = {
 // ─── Users ────────────────────────────────────────────────────────────────────
 export const userAPI = {
   updateProfile: (data) => api.put('/users/profile', data),
-  updateAvatar: (data) => api.put('/users/avatar', data),
+  updateAvatar: (file) => {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    return api.put('/users/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
   getAddresses: () => api.get('/users/addresses'),
   addAddress: (data) => api.post('/users/addresses', data),
   updateAddress: (id, data) => api.put(`/users/addresses/${id}`, data),

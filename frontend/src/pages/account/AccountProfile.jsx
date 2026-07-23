@@ -32,24 +32,17 @@ export default function AccountProfile() {
     } finally { setSaving(false) }
   }
 
-  // In production this would upload to Cloudinary
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     setAvatarLoading(true)
     try {
-      // Simulate upload — in production: upload to Cloudinary, get URL
-      const reader = new FileReader()
-      reader.onload = async (ev) => {
-        const avatarUrl = ev.target.result
-        const { data } = await userAPI.updateAvatar({ avatarUrl })
-        updateUser({ avatar: { url: avatarUrl } })
-        toast.success('Profile photo updated.')
-        setAvatarLoading(false)
-      }
-      reader.readAsDataURL(file)
-    } catch {
-      toast.error('Failed to update photo.')
+      const { data } = await userAPI.updateAvatar(file)
+      updateUser({ avatar: data.avatar })
+      toast.success('Profile photo updated.')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update photo.')
+    } finally {
       setAvatarLoading(false)
     }
   }
