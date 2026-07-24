@@ -39,12 +39,42 @@ describe('POST /api/payment/create-intent', () => {
     const user = await createTestUser();
     const order = await makeOrder(user);
 
-    const res = await request(app).post('/api/payment/create-intent').set(authHeaderFor(user)).send({ amount: 100, orderId: order._id.toString() });
+    const res = await request(app).post('/api/payment/create-intent').set(authHeaderFor(user)).send({ orderId: order._id.toString() });
 
     expect(res.status).toBe(200);
     expect(res.body.clientSecret).toBe('secret_abc');
     const updated = await Order.findById(order._id);
     expect(updated.stripePaymentIntentId).toBe('pi_123');
+  });
+
+  it('charges the order total, ignoring any client-supplied amount', async () => {
+    mockCreate.mockResolvedValue({ client_secret: 'secret_abc', id: 'pi_123' });
+    const user = await createTestUser();
+    const order = await makeOrder(user); // total: 100
+
+    await request(app).post('/api/payment/create-intent').set(authHeaderFor(user))
+      .send({ orderId: order._id.toString(), amount: 1 });
+
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ amount: 10000 }));
+  });
+
+  it('rejects a request with no orderId', async () => {
+    const user = await createTestUser();
+    const res = await request(app).post('/api/payment/create-intent').set(authHeaderFor(user)).send({});
+    expect(res.status).toBe(400);
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it("404s when the order belongs to a different user", async () => {
+    const owner = await createTestUser();
+    const other = await createTestUser();
+    const order = await makeOrder(owner);
+
+    const res = await request(app).post('/api/payment/create-intent').set(authHeaderFor(other))
+      .send({ orderId: order._id.toString() });
+
+    expect(res.status).toBe(404);
+    expect(mockCreate).not.toHaveBeenCalled();
   });
 });
 

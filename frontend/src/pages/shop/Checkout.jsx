@@ -255,7 +255,7 @@ export default function Checkout() {
                   </>
                 ) : paymentMethod === 'card' && pendingOrder ? (
                   <>
-                    <StripeCardForm orderId={pendingOrder._id} amount={total} onPaid={() => { clearCart(); navigate(`/order-success/${pendingOrder._id}`) }} />
+                    <StripeCardForm orderId={pendingOrder._id} onPaid={() => { clearCart(); navigate(`/order-success/${pendingOrder._id}`) }} />
                     <button onClick={() => setStep(1)} className="btn-outline w-full">Back</button>
                   </>
                 ) : paymentMethod === 'paypal' && pendingOrder ? (

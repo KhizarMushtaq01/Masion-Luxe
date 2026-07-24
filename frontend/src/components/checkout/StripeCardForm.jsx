@@ -50,7 +50,7 @@ function InnerForm({ onPaid, submitting, setSubmitting }) {
   )
 }
 
-export default function StripeCardForm({ orderId, amount, onPaid }) {
+export default function StripeCardForm({ orderId, onPaid }) {
   const [clientSecret, setClientSecret] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -60,7 +60,7 @@ export default function StripeCardForm({ orderId, amount, onPaid }) {
     let cancelled = false
     setLoadError('')
     setClientSecret(null)
-    paymentAPI.createIntent(amount, orderId)
+    paymentAPI.createIntent(orderId)
       .then(({ data }) => {
         if (!cancelled) setClientSecret(data.clientSecret)
       })
@@ -68,7 +68,7 @@ export default function StripeCardForm({ orderId, amount, onPaid }) {
         if (!cancelled) setLoadError(err.response?.data?.message || 'Failed to load payment form. Please try again.')
       })
     return () => { cancelled = true }
-  }, [orderId, amount, retryKey])
+  }, [orderId, retryKey])
 
   if (loadError) {
     return (

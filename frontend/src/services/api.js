@@ -116,7 +116,7 @@ export const newsletterAPI = {
 
 // ─── Payment ──────────────────────────────────────────────────────────────────
 export const paymentAPI = {
-  createIntent: (amount, orderId) => api.post('/payment/create-intent', { amount, orderId }),
+  createIntent: (orderId) => api.post('/payment/create-intent', { orderId }),
   paypalCreateOrder: (orderId) => api.post('/payment/paypal/create-order', { orderId }),
   paypalCaptureOrder: (paypalOrderId, orderId) => api.post('/payment/paypal/capture-order', { paypalOrderId, orderId }),
 }

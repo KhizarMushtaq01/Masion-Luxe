@@ -14,7 +14,13 @@ function paypalClient() {
 
 router.post('/create-intent', protect, async (req, res) => {
   try {
-    const { amount, orderId, currency = 'usd' } = req.body;
+    const { orderId, currency = 'usd' } = req.body;
+    if (!orderId) return res.status(400).json({ success: false, message: 'orderId is required.' });
+
+    // Ownership-scoped lookup, and the charge amount comes from the order's
+    // server-computed total — never trust a client-supplied amount.
+    const order = await Order.findOne({ _id: orderId, user: req.user._id });
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
 
     if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your_stripe')) {
       return res.json({
@@ -26,14 +32,12 @@ router.post('/create-intent', protect, async (req, res) => {
 
     const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100),
+      amount: Math.round(order.total * 100),
       currency,
-      metadata: { userId: req.user._id.toString(), orderId: orderId || '' }
+      metadata: { userId: req.user._id.toString(), orderId: order._id.toString() }
     });
 
-    if (orderId) {
-      await Order.findByIdAndUpdate(orderId, { stripePaymentIntentId: paymentIntent.id });
-    }
+    await Order.findByIdAndUpdate(order._id, { stripePaymentIntentId: paymentIntent.id });
 
     res.json({ success: true, clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id });
   } catch (err) {
