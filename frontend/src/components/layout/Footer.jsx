@@ -93,18 +93,18 @@ export default function Footer() {
               links: [
                 { label: 'My Account', href: '/account' },
                 { label: 'Order Tracking', href: '/account/orders' },
-                { label: 'Shipping & Returns', href: '/contact#shipping' },
-                { label: 'Size Guide', href: '/contact#sizing' },
-                { label: 'FAQ', href: '/contact#faq' },
+                { label: 'Shipping & Returns', href: '/shipping-returns' },
+                { label: 'Size Guide', href: '/size-guide' },
+                { label: 'FAQ', href: '/faq' },
               ],
             },
             {
               title: 'Legal',
               links: [
-                { label: 'Privacy Policy', href: '/contact#privacy' },
-                { label: 'Terms of Service', href: '/contact#terms' },
-                { label: 'Cookie Policy', href: '/contact#cookies' },
-                { label: 'Accessibility', href: '/contact#accessibility' },
+                { label: 'Privacy Policy', href: '/privacy-policy' },
+                { label: 'Terms of Service', href: '/terms-of-service' },
+                { label: 'Cookie Policy', href: '/cookie-policy' },
+                { label: 'Accessibility', href: '/accessibility' },
               ],
             },
           ].map((col) => (

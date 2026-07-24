@@ -39,6 +39,13 @@ const Lookbook = lazy(() => import('./pages/Lookbook'))
 const About = lazy(() => import('./pages/About'))
 const Sustainability = lazy(() => import('./pages/Sustainability'))
 const Contact = lazy(() => import('./pages/Contact'))
+const ShippingReturns = lazy(() => import('./pages/ShippingReturns'))
+const SizeGuide = lazy(() => import('./pages/SizeGuide'))
+const FAQ = lazy(() => import('./pages/FAQ'))
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
+const TermsOfService = lazy(() => import('./pages/TermsOfService'))
+const CookiePolicy = lazy(() => import('./pages/CookiePolicy'))
+const Accessibility = lazy(() => import('./pages/Accessibility'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 // Admin
@@ -110,6 +117,13 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/sustainability" element={<Sustainability />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/shipping-returns" element={<ShippingReturns />} />
+          <Route path="/size-guide" element={<SizeGuide />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/cookie-policy" element={<CookiePolicy />} />
+          <Route path="/accessibility" element={<Accessibility />} />
 
           {/* Checkout — protected */}
           <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
