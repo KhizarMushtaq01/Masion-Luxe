@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Play } from 'lucide-react'
+import { ArrowRight, Play, Truck } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { productAPI, newsletterAPI } from '../services/api'
 import ProductCard, { ProductCardSkeleton } from '../components/product/ProductCard'
@@ -233,7 +233,7 @@ function BrandStory() {
 // ─── Highlights ───────────────────────────────────────────────────────────────
 function Highlights() {
   const items = [
-    { icon: '✦', title: 'Complimentary Shipping', desc: 'On all orders over $500 worldwide' },
+    { icon: Truck, title: 'Complimentary Shipping', desc: 'On all orders over $500 worldwide' },
     { icon: '◈', title: 'Free Returns', desc: '30-day hassle-free return policy' },
     { icon: '◉', title: 'Authenticity Guaranteed', desc: 'Every piece certified genuine' },
     { icon: '◆', title: 'Concierge Service', desc: 'Personal styling consultation available' },
@@ -245,7 +245,7 @@ function Highlights() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-obsidian-100">
           {items.map((item, idx) => (
             <div key={item.title} className="py-8 sm:py-10 px-4 sm:px-6 text-center">
-              <div className="text-gold-500 text-2xl mb-3">{item.icon}</div>
+              <div className="text-gold-500 text-2xl mb-3">{typeof item.icon === 'string' ? item.icon : <item.icon size={20} />}</div>
               <h4 className="font-sans font-medium text-sm mb-1.5">{item.title}</h4>
               <p className="text-xs text-obsidian-400 font-sans leading-relaxed">{item.desc}</p>
             </div>

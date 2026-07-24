@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Heart, Share2, ChevronDown, Star, Truck, RotateCcw, Shield } from 'lucide-react'
+import { Heart, Share2, ChevronDown, Star, Truck, RotateCcw, Shield, AlertTriangle, Check, CheckCircle2 } from 'lucide-react'
 import { productAPI, reviewAPI } from '../../services/api'
 import { useCartStore, useWishlistStore } from '../../store/cartStore'
 import useAuthStore from '../../store/authStore'
@@ -236,7 +236,7 @@ export default function ProductDetail() {
           </div>
 
           {product.stock > 0 && product.stock <= 5 && (
-            <p className="text-xs text-amber-600 font-sans">⚠ Only {product.stock} left in stock</p>
+            <p className="text-xs text-amber-600 font-sans flex items-center gap-1.5"><AlertTriangle size={12} /> Only {product.stock} left in stock</p>
           )}
 
           {/* Delivery info */}
@@ -278,7 +278,7 @@ export default function ProductDetail() {
                 <ul className="space-y-2">
                   {product.features.map((f, i) => (
                     <li key={i} className="flex items-start gap-3 text-sm font-sans text-obsidian-600">
-                      <span className="text-gold-500 mt-0.5">✦</span> {f}
+                      <Check size={14} className="text-gold-500 mt-0.5 flex-shrink-0" /> {f}
                     </li>
                   ))}
                 </ul>
@@ -322,7 +322,7 @@ export default function ProductDetail() {
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-obsidian-400 font-sans">{new Date(r.createdAt).toLocaleDateString()}</p>
-                          {r.isVerifiedPurchase && <span className="text-[10px] text-green-600 font-sans">✓ Verified Purchase</span>}
+                          {r.isVerifiedPurchase && <span className="text-[10px] text-green-600 font-sans flex items-center gap-1"><CheckCircle2 size={11} /> Verified Purchase</span>}
                         </div>
                       </div>
                       <h4 className="font-sans font-medium text-sm mb-1">{r.title}</h4>

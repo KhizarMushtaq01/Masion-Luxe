@@ -1,6 +1,7 @@
 const { Order, Cart, ActivityLog } = require('../models/index');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const Settings = require('../models/Settings');
 const { sendTemplateEmail } = require('../utils/email');
 
 // @desc    Create order
@@ -9,8 +10,7 @@ exports.createOrder = async (req, res, next) => {
   try {
     const {
       items, shippingAddress, billingAddress,
-      paymentMethod, subtotal, shippingCost, taxAmount,
-      discountAmount, couponCode, total, notes
+      paymentMethod, subtotal, discountAmount, couponCode, notes
     } = req.body;
 
     // Validate stock
@@ -24,6 +24,17 @@ exports.createOrder = async (req, res, next) => {
       }
     }
 
+    // Server is authoritative for money math: recompute shipping/tax/total from
+    // Settings and the trusted subtotal/discountAmount, ignoring any client-submitted
+    // shippingCost/taxAmount/total values.
+    const settings = await Settings.getSettings();
+    const netSubtotal = subtotal - (discountAmount || 0);
+    const shippingCost = netSubtotal >= settings.freeShippingThreshold ? 0 : settings.standardShippingCost;
+    const taxAmount = netSubtotal * settings.taxRate;
+    const total = netSubtotal + shippingCost + taxAmount;
+
+    const initialStatus = paymentMethod === 'cod' ? 'confirmed' : 'pending_payment';
+
     const order = await Order.create({
       user: req.user._id,
       items,
@@ -31,36 +42,39 @@ exports.createOrder = async (req, res, next) => {
       billingAddress: billingAddress || shippingAddress,
       paymentMethod,
       subtotal,
-      shippingCost: shippingCost || 0,
-      taxAmount: taxAmount || 0,
+      shippingCost,
+      taxAmount,
       discountAmount: discountAmount || 0,
       couponCode,
       total,
       notes,
-      orderStatus: paymentMethod === 'cod' ? 'confirmed' : 'pending',
-      statusHistory: [{ status: 'pending', note: 'Order placed', updatedBy: req.user._id }]
-    });
-
-    // Update stock
-    for (const item of items) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: -item.quantity, soldCount: item.quantity }
-      });
-    }
-
-    // Update user stats
-    await User.findByIdAndUpdate(req.user._id, {
-      $inc: { totalOrders: 1, totalSpent: total, loyaltyPoints: Math.floor(total) }
+      orderStatus: initialStatus,
+      statusHistory: [{ status: initialStatus, note: 'Order placed', updatedBy: req.user._id }]
     });
 
     // Clear cart
     await Cart.findOneAndUpdate({ user: req.user._id }, { items: [] });
 
-    // Send confirmation email
-    await sendTemplateEmail('orderConfirmed', req.user.email, {
-      firstName: req.user.firstName,
-      ...order.toObject()
-    });
+    if (initialStatus === 'confirmed') {
+      // COD orders are confirmed immediately, so stock is committed now. Card/PayPal
+      // orders stay pending_payment and only touch stock once confirmOrderPayment
+      // runs (real payment success) — an abandoned/declined checkout never
+      // decrements stock, so it never needs restoring either.
+      for (const item of items) {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { stock: -item.quantity, soldCount: item.quantity }
+        });
+      }
+
+      await User.findByIdAndUpdate(req.user._id, {
+        $inc: { totalOrders: 1, totalSpent: total, loyaltyPoints: Math.floor(total) }
+      });
+
+      await sendTemplateEmail('orderConfirmed', req.user.email, {
+        firstName: req.user.firstName,
+        ...order.toObject()
+      });
+    }
 
     await ActivityLog.create({
       user: req.user._id,
@@ -231,6 +245,68 @@ exports.updateOrderStatus = async (req, res, next) => {
       details: { orderNumber: order.orderNumber, newStatus: status }
     });
 
+    res.json({ success: true, order });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Shared helper: marks an order confirmed once payment has actually succeeded.
+// Called by the Stripe webhook and the PayPal capture route (not an HTTP route itself).
+exports.confirmOrderPayment = async (orderId, { paymentStatus = 'paid' } = {}) => {
+  const order = await Order.findById(orderId).populate('user', 'firstName lastName email');
+  if (!order) throw new Error(`Order ${orderId} not found.`);
+
+  // Atomically transition non-confirmed -> confirmed. The filter on orderStatus
+  // ensures that if two calls race (e.g. duplicate webhook delivery), only one
+  // of them can ever match and proceed to the side effects below.
+  const updated = await Order.findOneAndUpdate(
+    { _id: orderId, orderStatus: { $ne: 'confirmed' } },
+    {
+      $set: { orderStatus: 'confirmed', paymentStatus },
+      $push: { statusHistory: { status: 'confirmed', note: 'Payment confirmed', updatedBy: order.user._id } }
+    },
+    { new: true }
+  ).populate('user', 'firstName lastName email');
+
+  if (!updated) {
+    // Already confirmed by a concurrent/duplicate call — idempotent no-op.
+    // Re-fetch rather than returning the pre-update `order` snapshot: a
+    // concurrent caller may have flipped the status to confirmed after we
+    // read `order` but before our own update attempt, so `order` can be stale.
+    return await Order.findById(orderId).populate('user', 'firstName lastName email');
+  }
+
+  // Card/PayPal orders skip the stock decrement at creation (see createOrder),
+  // so it happens here instead, gated by the same atomic transition above —
+  // exactly once, only once payment has actually succeeded.
+  for (const item of updated.items) {
+    await Product.findByIdAndUpdate(item.product, {
+      $inc: { stock: -item.quantity, soldCount: item.quantity }
+    });
+  }
+
+  await User.findByIdAndUpdate(updated.user._id, {
+    $inc: { totalOrders: 1, totalSpent: updated.total, loyaltyPoints: Math.floor(updated.total) }
+  });
+
+  await sendTemplateEmail('orderConfirmed', updated.user.email, {
+    firstName: updated.user.firstName,
+    ...updated.toObject()
+  });
+
+  return updated;
+};
+
+// @desc    Get single order detail (admin)
+// @route   GET /api/admin/orders/:id
+exports.getOrderDetail = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'firstName lastName email phone')
+      .populate('items.product', 'name images slug')
+      .populate('statusHistory.updatedBy', 'firstName lastName');
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
     res.json({ success: true, order });
   } catch (err) {
     next(err);

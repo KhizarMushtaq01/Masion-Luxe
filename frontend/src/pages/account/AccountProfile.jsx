@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Camera, Save } from 'lucide-react'
+import { Camera, Save, CheckCircle2 } from 'lucide-react'
 import { AccountLayout } from '../../components/auth/AccountLayout'
 import { userAPI } from '../../services/api'
 import useAuthStore from '../../store/authStore'
@@ -32,24 +32,17 @@ export default function AccountProfile() {
     } finally { setSaving(false) }
   }
 
-  // In production this would upload to Cloudinary
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     setAvatarLoading(true)
     try {
-      // Simulate upload — in production: upload to Cloudinary, get URL
-      const reader = new FileReader()
-      reader.onload = async (ev) => {
-        const avatarUrl = ev.target.result
-        const { data } = await userAPI.updateAvatar({ avatarUrl })
-        updateUser({ avatar: { url: avatarUrl } })
-        toast.success('Profile photo updated.')
-        setAvatarLoading(false)
-      }
-      reader.readAsDataURL(file)
-    } catch {
-      toast.error('Failed to update photo.')
+      const { data } = await userAPI.updateAvatar(file)
+      updateUser({ avatar: data.avatar })
+      toast.success('Profile photo updated.')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update photo.')
+    } finally {
       setAvatarLoading(false)
     }
   }
@@ -85,7 +78,7 @@ export default function AccountProfile() {
             <span className="text-xs text-amber-600 font-sans bg-amber-50 px-2 py-0.5 mt-1 inline-block">Email not verified</span>
           )}
           {user?.isEmailVerified && (
-            <span className="text-xs text-green-600 font-sans mt-1 inline-block">✓ Verified</span>
+            <span className="text-xs text-green-600 font-sans mt-1 inline-flex items-center gap-1"><CheckCircle2 size={12} /> Verified</span>
           )}
         </div>
       </div>

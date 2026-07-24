@@ -8,7 +8,7 @@ import { TrendingUp, TrendingDown, Users, ShoppingBag, Package, DollarSign, Aler
 import { adminAPI } from '../../services/api'
 
 const STATUS_COLORS = {
-  pending:'#f59e0b', confirmed:'#3b82f6', processing:'#6366f1',
+  pending:'#f59e0b', pending_payment:'#f59e0b', confirmed:'#3b82f6', processing:'#6366f1',
   shipped:'#8b5cf6', delivered:'#10b981', cancelled:'#ef4444'
 }
 
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
             <Link to="/admin/products" className="text-xs tracking-widest uppercase font-sans text-gold-600 hover:text-gold-700 transition-colors">Manage</Link>
           </div>
           {lowStockProducts.length === 0 ? (
-            <p className="text-sm text-obsidian-400 font-sans py-4">All products are well-stocked. 🎉</p>
+            <p className="text-sm text-obsidian-400 font-sans py-4">All products are well-stocked.</p>
           ) : (
             <div className="space-y-0">
               {lowStockProducts.map(p => (

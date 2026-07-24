@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Search, ChevronDown } from 'lucide-react'
+import { Search, ChevronDown, Star, CheckCircle2 } from 'lucide-react'
 import { adminAPI } from '../../services/api'
+import useAuthStore from '../../store/authStore'
 import toast from 'react-hot-toast'
 
 // ─── Shared table wrapper ─────────────────────────────────────────────────────
@@ -34,9 +36,9 @@ function AdminTable({ headers, children, pagination, onPageChange }) {
 }
 
 // ─── AdminOrders ──────────────────────────────────────────────────────────────
-const ORDER_STATUSES = ['pending','confirmed','processing','shipped','out_for_delivery','delivered','cancelled','return_requested','returned']
+const ORDER_STATUSES = ['pending','pending_payment','confirmed','processing','shipped','out_for_delivery','delivered','cancelled','return_requested','returned']
 const STATUS_COLORS_MAP = {
-  pending:'amber', confirmed:'blue', processing:'indigo', shipped:'violet',
+  pending:'amber', pending_payment:'amber', confirmed:'blue', processing:'indigo', shipped:'violet',
   out_for_delivery:'purple', delivered:'green', cancelled:'red', return_requested:'orange', returned:'gray'
 }
 
@@ -106,7 +108,7 @@ export function AdminOrders() {
         ) : data?.orders?.map(order => (
           <tr key={order._id} className="hover:bg-cream transition-colors">
             <td className="px-4 py-3">
-              <p className="text-sm font-sans font-medium">#{order.orderNumber}</p>
+              <Link to={`/admin/orders/${order._id}`} className="text-sm font-sans font-medium hover:text-gold-600 transition-colors">#{order.orderNumber}</Link>
               {order.trackingNumber && <p className="text-xs text-gold-600 font-sans">Track: {order.trackingNumber}</p>}
             </td>
             <td className="px-4 py-3">
@@ -188,6 +190,8 @@ export function AdminUsers() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const qc = useQueryClient()
+  const { user: viewer } = useAuthStore()
+  const isSuperadmin = viewer?.role === 'superadmin'
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users', { page, search }],
@@ -202,6 +206,18 @@ export function AdminUsers() {
       await qc.invalidateQueries(['admin-users'])
       toast.success(`User ${user.isBanned ? 'unbanned' : 'banned'}.`)
     } catch { toast.error('Failed to update user.') }
+  }
+
+  const handleRoleChange = async (targetUser, newRole) => {
+    const confirmMsg = `Change ${targetUser.firstName} ${targetUser.lastName}'s role to "${newRole}"?`
+    if (!window.confirm(confirmMsg)) return
+    try {
+      await adminAPI.updateUserRole(targetUser._id, newRole)
+      await qc.invalidateQueries(['admin-users'])
+      toast.success(`Role updated to ${newRole}.`)
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update role.')
+    }
   }
 
   return (
@@ -237,7 +253,18 @@ export function AdminUsers() {
               </div>
             </td>
             <td className="px-4 py-3">
-              <span className={`text-[10px] px-2 py-0.5 font-sans ${user.role==='admin'||user.role==='superadmin' ? 'bg-gold-50 text-gold-700' : 'bg-obsidian-50 text-obsidian-500'}`}>{user.role}</span>
+              {isSuperadmin && user.role !== 'superadmin' ? (
+                <select
+                  value={user.role}
+                  onChange={e => handleRoleChange(user, e.target.value)}
+                  className="text-[10px] px-2 py-1 font-sans bg-obsidian-50 border border-obsidian-100 focus:outline-none focus:border-gold-400"
+                >
+                  <option value="user">user</option>
+                  <option value="admin">admin</option>
+                </select>
+              ) : (
+                <span className={`text-[10px] px-2 py-0.5 font-sans ${user.role==='admin'||user.role==='superadmin' ? 'bg-gold-50 text-gold-700' : 'bg-obsidian-50 text-obsidian-500'}`}>{user.role}</span>
+              )}
             </td>
             <td className="px-4 py-3"><span className="text-sm font-sans">{user.totalOrders||0}</span></td>
             <td className="px-4 py-3"><span className="text-sm font-sans">${(user.totalSpent||0).toFixed(2)}</span></td>
@@ -310,7 +337,7 @@ export function AdminReviews() {
             </td>
             <td className="px-4 py-3">
               <div className="flex">
-                {[1,2,3,4,5].map(s => <span key={s} className={`text-xs ${s<=r.rating?'text-gold-500':'text-obsidian-200'}`}>★</span>)}
+                {[1,2,3,4,5].map(s => <Star key={s} size={12} className={s<=r.rating?'text-gold-500 fill-gold-500':'text-obsidian-200'} />)}
               </div>
             </td>
             <td className="px-4 py-3">
@@ -318,7 +345,7 @@ export function AdminReviews() {
               <p className="text-xs text-obsidian-400 font-sans line-clamp-2 max-w-[200px]">{r.body}</p>
             </td>
             <td className="px-4 py-3">
-              {r.isVerifiedPurchase && <span className="text-xs text-green-600 font-sans">✓ Verified</span>}
+              {r.isVerifiedPurchase && <span className="text-xs text-green-600 font-sans flex items-center gap-1"><CheckCircle2 size={12} /> Verified</span>}
             </td>
             <td className="px-4 py-3"><p className="text-xs text-obsidian-400 font-sans">{new Date(r.createdAt).toLocaleDateString()}</p></td>
             <td className="px-4 py-3">

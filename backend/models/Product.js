@@ -39,7 +39,7 @@ const productSchema = new mongoose.Schema({
   careInstructions: [String],
   features: [String],
   tags: [String],
-  isNewProduct: { type: Boolean, default: false }, // ✅ Changed from 'isNew' to 'isNewProduct'
+  isNewProduct: { type: Boolean, default: false }, // Changed from 'isNew' to 'isNewProduct'
   isFeatured: { type: Boolean, default: false },
   isBestseller: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
@@ -76,6 +76,6 @@ productSchema.pre('save', function (next) {
 // Indexes - REMOVED duplicate slug index (unique: true already creates it)
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 productSchema.index({ category: 1, isActive: 1 });
-// productSchema.index({ slug: 1 }); // ❌ REMOVED - duplicate of unique:true
+// productSchema.index({ slug: 1 }); // REMOVED - duplicate of unique:true
 
 module.exports = mongoose.model('Product', productSchema);

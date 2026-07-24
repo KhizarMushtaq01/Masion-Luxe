@@ -45,7 +45,11 @@ export const authAPI = {
 // ─── Users ────────────────────────────────────────────────────────────────────
 export const userAPI = {
   updateProfile: (data) => api.put('/users/profile', data),
-  updateAvatar: (data) => api.put('/users/avatar', data),
+  updateAvatar: (file) => {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    return api.put('/users/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
   getAddresses: () => api.get('/users/addresses'),
   addAddress: (data) => api.post('/users/addresses', data),
   updateAddress: (id, data) => api.put(`/users/addresses/${id}`, data),
@@ -64,6 +68,12 @@ export const productAPI = {
   createProduct: (data) => api.post('/products', data),
   updateProduct: (id, data) => api.put(`/products/${id}`, data),
   deleteProduct: (id) => api.delete(`/products/${id}`),
+  uploadImages: (id, files) => {
+    const formData = new FormData()
+    files.forEach(f => formData.append('images', f))
+    return api.post(`/products/${id}/images`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  deleteImage: (id, publicId) => api.delete(`/products/${id}/images/${encodeURIComponent(publicId)}`),
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
@@ -106,7 +116,9 @@ export const newsletterAPI = {
 
 // ─── Payment ──────────────────────────────────────────────────────────────────
 export const paymentAPI = {
-  createIntent: (amount) => api.post('/payment/create-intent', { amount }),
+  createIntent: (orderId) => api.post('/payment/create-intent', { orderId }),
+  paypalCreateOrder: (orderId) => api.post('/payment/paypal/create-order', { orderId }),
+  paypalCaptureOrder: (paypalOrderId, orderId) => api.post('/payment/paypal/capture-order', { paypalOrderId, orderId }),
 }
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
@@ -114,7 +126,9 @@ export const adminAPI = {
   getDashboard: () => api.get('/admin/dashboard'),
   getUsers: (params) => api.get('/admin/users', { params }),
   banUser: (id, data) => api.put(`/admin/users/${id}/ban`, data),
+  updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
   getAllOrders: (params) => api.get('/admin/orders', { params }),
+  getOrderDetail: (id) => api.get(`/admin/orders/${id}`),
   updateOrderStatus: (id, data) => api.put(`/admin/orders/${id}/status`, data),
   getReviews: (params) => api.get('/admin/reviews', { params }),
   approveReview: (id, data) => api.put(`/admin/reviews/${id}/approve`, data),
@@ -123,4 +137,10 @@ export const adminAPI = {
   updateCoupon: (id, data) => api.put(`/admin/coupons/${id}`, data),
   getActivityLogs: (params) => api.get('/admin/activity-logs', { params }),
   getAnalytics: (params) => api.get('/analytics/overview', { params }),
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+export const settingsAPI = {
+  getSettings: () => api.get('/settings'),
+  updateSettings: (data) => api.put('/admin/settings', data),
 }

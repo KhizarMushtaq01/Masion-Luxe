@@ -142,3 +142,10 @@
 /* Swiper overrides */
 .swiper-pagination-bullet { background: #c9a96e !important; }
 .swiper-button-next, .swiper-button-prev { color: #c9a96e !important; }
+
+@media print {
+  body * { visibility: hidden; }
+  #invoice, #invoice * { visibility: visible; }
+  #invoice { position: absolute; left: 0; top: 0; width: 100%; }
+  .print\:hidden { display: none !important; }
+}
