@@ -28,3 +28,29 @@ describe('sendEmail (Resend)', () => {
     expect(result.success).toBe(true);
   });
 });
+
+describe('sendTemplateEmail (single flattened data object, matching real call sites)', () => {
+  const originalKey = process.env.RESEND_API_KEY;
+  beforeEach(() => { process.env.RESEND_API_KEY = 're_test_key'; });
+  afterEach(() => { process.env.RESEND_API_KEY = originalKey; });
+
+  const order = {
+    _id: 'order1', orderNumber: 'ML-1', items: [{ name: 'Bag', size: 'M', quantity: 1, price: 100 }],
+    subtotal: 100, shippingCost: 0, total: 100, trackingNumber: 'TRACK1', trackingUrl: null,
+    estimatedDelivery: null, cancelReason: null,
+  };
+
+  it.each([
+    ['signIn', { firstName: 'Amina', ip: '1.2.3.4', userAgent: 'test-agent' }],
+    ['passwordResetRequest', { firstName: 'Amina', resetToken: 'tok' }],
+    ['profileUpdated', { firstName: 'Amina', changes: ['Email updated'] }],
+    ['orderConfirmed', { firstName: 'Amina', ...order }],
+    ['orderShipped', { firstName: 'Amina', ...order }],
+    ['orderDelivered', { firstName: 'Amina', ...order }],
+    ['orderCancelled', { firstName: 'Amina', ...order }],
+    ['returnRequested', { firstName: 'Amina', ...order }],
+  ])('%s does not throw when called with the data shape its call sites actually pass', async (templateName, data) => {
+    const result = await sendTemplateEmail(templateName, 'a@b.com', data);
+    expect(result.success).toBe(true);
+  });
+});

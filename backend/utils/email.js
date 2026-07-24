@@ -102,17 +102,17 @@ const emailTemplates = {
     `)
   }),
 
-  signIn: (user, loginInfo) => ({
+  signIn: (data) => ({
     subject: 'New Sign-in to Your Maison Luxe Account',
     html: baseTemplate(`
       <div class="greeting">New sign-in detected.</div>
-      <p class="text">Dear ${user.firstName}, we noticed a new sign-in to your Maison Luxe account.</p>
+      <p class="text">Dear ${data.firstName}, we noticed a new sign-in to your Maison Luxe account.</p>
       <div class="highlight-box">
         <strong style="color:#0a0a0a;font-size:13px">Login Details</strong>
         <p style="margin:12px 0 0;color:#555;font-size:14px;line-height:2">
           <strong>Time:</strong> ${new Date().toLocaleString('en-US', { timeZone: 'UTC' })} UTC<br/>
-          <strong>Device:</strong> ${loginInfo.userAgent || 'Unknown'}<br/>
-          <strong>IP Address:</strong> ${loginInfo.ip || 'Unknown'}
+          <strong>Device:</strong> ${data.userAgent || 'Unknown'}<br/>
+          <strong>IP Address:</strong> ${data.ip || 'Unknown'}
         </p>
       </div>
       <div class="warning-box">
@@ -123,12 +123,12 @@ const emailTemplates = {
     `)
   }),
 
-  passwordResetRequest: (user, resetToken) => ({
+  passwordResetRequest: (data) => ({
     subject: 'Password Reset Request – Maison Luxe',
     html: baseTemplate(`
       <div class="greeting">Password reset requested.</div>
-      <p class="text">Dear ${user.firstName}, we received a request to reset the password for your account. This link will expire in 1 hour.</p>
-      <center><a href="${process.env.CLIENT_URL}/reset-password?token=${resetToken}" class="btn">Reset Password</a></center>
+      <p class="text">Dear ${data.firstName}, we received a request to reset the password for your account. This link will expire in 1 hour.</p>
+      <center><a href="${process.env.CLIENT_URL}/reset-password?token=${data.resetToken}" class="btn">Reset Password</a></center>
       <div class="warning-box">
         <strong style="color:#e8a000">Didn't request this?</strong>
         <p style="margin:8px 0 0;color:#555;font-size:14px">If you did not request a password reset, your account may be compromised. Please contact our support team immediately.</p>
@@ -148,26 +148,26 @@ const emailTemplates = {
     `)
   }),
 
-  profileUpdated: (user, changes) => ({
+  profileUpdated: (data) => ({
     subject: 'Profile Updated – Maison Luxe',
     html: baseTemplate(`
       <div class="greeting">Profile updated.</div>
-      <p class="text">Dear ${user.firstName}, the following changes were made to your account:</p>
+      <p class="text">Dear ${data.firstName}, the following changes were made to your account:</p>
       <div class="highlight-box">
-        ${changes.map(c => `<p style="margin:4px 0;font-size:14px;color:#555">&bull; &nbsp;${c}</p>`).join('')}
+        ${data.changes.map(c => `<p style="margin:4px 0;font-size:14px;color:#555">&bull; &nbsp;${c}</p>`).join('')}
       </div>
       <p class="text">If you did not make these changes, please contact our support team immediately.</p>
     `)
   }),
 
-  orderConfirmed: (user, order) => ({
-    subject: `Order Confirmed – #${order.orderNumber} | Maison Luxe`,
+  orderConfirmed: (data) => ({
+    subject: `Order Confirmed – #${data.orderNumber} | Maison Luxe`,
     html: baseTemplate(`
       <div class="greeting">Thank you for your order.</div>
-      <p class="text">Dear ${user.firstName}, your order has been confirmed and is being prepared with the utmost care.</p>
+      <p class="text">Dear ${data.firstName}, your order has been confirmed and is being prepared with the utmost care.</p>
       <div class="highlight-box" style="text-align:center">
         <strong style="color:#888;font-size:11px;letter-spacing:2px;text-transform:uppercase">Order Number</strong><br/>
-        <strong style="font-size:24px;color:#0a0a0a;letter-spacing:4px">${order.orderNumber}</strong>
+        <strong style="font-size:24px;color:#0a0a0a;letter-spacing:4px">${data.orderNumber}</strong>
       </div>
       <table class="order-table">
         <tr>
@@ -176,7 +176,7 @@ const emailTemplates = {
           <th>Qty</th>
           <th>Price</th>
         </tr>
-        ${order.items.map(item => `
+        ${data.items.map(item => `
         <tr>
           <td><strong>${item.name}</strong></td>
           <td>${item.size || '—'}</td>
@@ -185,49 +185,49 @@ const emailTemplates = {
         </tr>`).join('')}
         <tr class="total-row">
           <td colspan="3">Subtotal</td>
-          <td>$${order.subtotal.toFixed(2)}</td>
+          <td>$${data.subtotal.toFixed(2)}</td>
         </tr>
         <tr>
           <td colspan="3" style="padding:8px 16px;font-size:13px;color:#666">Shipping</td>
-          <td style="padding:8px 16px;font-size:13px;color:#666">${order.shippingCost === 0 ? 'Complimentary' : '$' + order.shippingCost.toFixed(2)}</td>
+          <td style="padding:8px 16px;font-size:13px;color:#666">${data.shippingCost === 0 ? 'Complimentary' : '$' + data.shippingCost.toFixed(2)}</td>
         </tr>
         <tr class="total-row">
           <td colspan="3">Total</td>
-          <td>$${order.total.toFixed(2)}</td>
+          <td>$${data.total.toFixed(2)}</td>
         </tr>
       </table>
-      <center><a href="${process.env.CLIENT_URL}/account/orders/${order._id}" class="btn btn-gold">Track Your Order</a></center>
+      <center><a href="${process.env.CLIENT_URL}/account/orders/${data._id}" class="btn btn-gold">Track Your Order</a></center>
     `)
   }),
 
-  orderShipped: (user, order) => ({
-    subject: `Your Order is On Its Way – #${order.orderNumber}`,
+  orderShipped: (data) => ({
+    subject: `Your Order is On Its Way – #${data.orderNumber}`,
     html: baseTemplate(`
       <div class="greeting">Your order has shipped.</div>
-      <p class="text">Dear ${user.firstName}, your Maison Luxe order is now on its way to you. We have entrusted it to our premium delivery partners.</p>
+      <p class="text">Dear ${data.firstName}, your Maison Luxe order is now on its way to you. We have entrusted it to our premium delivery partners.</p>
       <div class="highlight-box" style="text-align:center">
         <div style="font-size:11px;color:#888;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Tracking Number</div>
-        <strong style="font-size:20px;color:#0a0a0a;letter-spacing:3px">${order.trackingNumber || 'Available Soon'}</strong>
+        <strong style="font-size:20px;color:#0a0a0a;letter-spacing:3px">${data.trackingNumber || 'Available Soon'}</strong>
       </div>
-      ${order.estimatedDelivery ? `<p class="text">Estimated delivery: <strong>${new Date(order.estimatedDelivery).toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</strong></p>` : ''}
-      <center><a href="${order.trackingUrl || process.env.CLIENT_URL + '/account/orders/' + order._id}" class="btn">Track Shipment</a></center>
+      ${data.estimatedDelivery ? `<p class="text">Estimated delivery: <strong>${new Date(data.estimatedDelivery).toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</strong></p>` : ''}
+      <center><a href="${data.trackingUrl || process.env.CLIENT_URL + '/account/orders/' + data._id}" class="btn">Track Shipment</a></center>
     `)
   }),
 
-  orderDelivered: (user, order) => ({
+  orderDelivered: (data) => ({
     subject: `Order Delivered – Your Maison Luxe Experience`,
     html: baseTemplate(`
       <div class="greeting">Your order has arrived.</div>
-      <p class="text">Dear ${user.firstName}, your Maison Luxe order #${order.orderNumber} has been successfully delivered. We hope it brings you the joy and elegance it was crafted to provide.</p>
-      <center><a href="${process.env.CLIENT_URL}/products/${order.items[0]?.product}/review" class="btn btn-gold">Share Your Experience</a></center>
+      <p class="text">Dear ${data.firstName}, your Maison Luxe order #${data.orderNumber} has been successfully delivered. We hope it brings you the joy and elegance it was crafted to provide.</p>
+      <center><a href="${process.env.CLIENT_URL}/products/${data.items[0]?.product}/review" class="btn btn-gold">Share Your Experience</a></center>
     `)
   }),
 
-  orderCancelled: (user, order) => ({
-    subject: `Order Cancelled – #${order.orderNumber}`,
+  orderCancelled: (data) => ({
+    subject: `Order Cancelled – #${data.orderNumber}`,
     html: baseTemplate(`
       <div class="greeting">Order cancellation confirmed.</div>
-      <p class="text">Dear ${user.firstName}, your order #${order.orderNumber} has been cancelled. ${order.cancelReason ? `Reason: ${order.cancelReason}.` : ''}</p>
+      <p class="text">Dear ${data.firstName}, your order #${data.orderNumber} has been cancelled. ${data.cancelReason ? `Reason: ${data.cancelReason}.` : ''}</p>
       <p class="text">If payment was processed, a refund will be issued within 5-10 business days to your original payment method.</p>
       <center><a href="${process.env.CLIENT_URL}/shop" class="btn btn-gold">Continue Shopping</a></center>
     `)
@@ -259,12 +259,12 @@ const emailTemplates = {
     `)
   }),
 
-  returnRequested: (user, order) => ({
-    subject: `Return Request Received – #${order.orderNumber}`,
+  returnRequested: (data) => ({
+    subject: `Return Request Received – #${data.orderNumber}`,
     html: baseTemplate(`
       <div class="greeting">Return request received.</div>
-      <p class="text">Dear ${user.firstName}, we have received your return request for order #${order.orderNumber}. Our team will review your request within 1-2 business days.</p>
-      <center><a href="${process.env.CLIENT_URL}/account/orders/${order._id}" class="btn">View Order Details</a></center>
+      <p class="text">Dear ${data.firstName}, we have received your return request for order #${data.orderNumber}. Our team will review your request within 1-2 business days.</p>
+      <center><a href="${process.env.CLIENT_URL}/account/orders/${data._id}" class="btn">View Order Details</a></center>
     `)
   })
 };
