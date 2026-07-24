@@ -152,7 +152,7 @@ export default function Navbar() {
   return (
     <>
       {/* Announcement bar */}
-      <div className="bg-obsidian text-center py-2.5 px-4">
+      <div className="relative z-50 bg-obsidian text-center py-2.5 px-4">
         <p className="text-xs tracking-widest text-gold-400 font-sans uppercase">
           Complimentary shipping on orders over $500 · Free returns within 30 days
         </p>
