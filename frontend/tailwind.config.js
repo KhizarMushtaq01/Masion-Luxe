@@ -88,7 +88,7 @@ export default {
       backgroundImage: {
         'gold-gradient': 'linear-gradient(135deg, #c9a96e, #f0d080, #c9a96e)',
         'dark-gradient': 'linear-gradient(135deg, #0a0a0a, #1a1a1a)',
-        'hero-gradient': 'linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6))',
+        'hero-gradient': 'linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.65))',
       }
     },
   },

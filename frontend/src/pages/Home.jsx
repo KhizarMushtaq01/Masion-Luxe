@@ -370,15 +370,17 @@ function Newsletter() {
 // ─── Home Page ────────────────────────────────────────────────────────────────
 export default function Home() {
   return (
-    <div className="overflow-x-hidden">
+    <>
       <Hero />
-      <Highlights />
-      <CategoryGrid />
-      <FeaturedProducts />
-      <BrandStory />
-      <LookbookStrip />
-      <Press />
-      <Newsletter />
-    </div>
+      <div className="overflow-x-hidden">
+        <Highlights />
+        <CategoryGrid />
+        <FeaturedProducts />
+        <BrandStory />
+        <LookbookStrip />
+        <Press />
+        <Newsletter />
+      </div>
+    </>
   )
 }
