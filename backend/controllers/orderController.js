@@ -236,6 +236,16 @@ exports.updateOrderStatus = async (req, res, next) => {
         firstName: order.user.firstName,
         ...order.toObject()
       });
+    } else if (status === 'cancelled') {
+      await sendTemplateEmail('orderCancelled', order.user.email, {
+        firstName: order.user.firstName,
+        ...order.toObject()
+      });
+    } else if (status === 'returned') {
+      await sendTemplateEmail('returnCompleted', order.user.email, {
+        firstName: order.user.firstName,
+        ...order.toObject()
+      });
     }
 
     await ActivityLog.create({

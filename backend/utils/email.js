@@ -11,8 +11,8 @@ const baseTemplate = (content, preheader = '') => `
 <meta name="x-apple-disable-message-reformatting"/>
 <title>Maison Luxe</title>
 <style>
-  body{margin:0;padding:0;background:#f4f0ec;font-family:'Georgia',serif}
-  .container{max-width:600px;margin:0 auto;background:#fff}
+  body{margin:0;padding:0;background:#f4f0ec;font-family:'Georgia',serif;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  .container{max-width:600px;width:100%;margin:0 auto;background:#fff}
   .header{background:#0a0a0a;padding:40px 48px;text-align:center}
   .header-logo{font-size:28px;letter-spacing:8px;color:#c9a96e;font-family:Georgia,serif;text-transform:uppercase}
   .header-tagline{color:#666;font-size:11px;letter-spacing:4px;margin-top:6px;text-transform:uppercase}
@@ -20,12 +20,12 @@ const baseTemplate = (content, preheader = '') => `
   .body{padding:48px}
   .greeting{font-size:22px;color:#0a0a0a;margin-bottom:8px;font-weight:400}
   .text{font-size:15px;color:#444;line-height:1.7;margin-bottom:16px}
-  .btn{display:inline-block;background:#0a0a0a;color:#fff !important;padding:16px 40px;text-decoration:none;font-size:12px;letter-spacing:3px;text-transform:uppercase;margin:24px 0;font-family:Arial,sans-serif}
+  .btn{display:inline-block;background:#0a0a0a;color:#fff !important;padding:16px 40px;text-decoration:none;font-size:12px;letter-spacing:3px;text-transform:uppercase;margin:24px 0;font-family:Arial,sans-serif;box-sizing:border-box}
   .btn-gold{background:linear-gradient(135deg,#c9a96e,#b8963d);color:#fff !important}
   .divider{border:none;border-top:1px solid #e8e0d0;margin:32px 0}
   .order-table{width:100%;border-collapse:collapse;margin:24px 0}
   .order-table th{background:#0a0a0a;color:#c9a96e;padding:12px 16px;font-size:11px;letter-spacing:2px;text-transform:uppercase;text-align:left}
-  .order-table td{padding:12px 16px;border-bottom:1px solid #f0ebe3;font-size:14px;color:#333}
+  .order-table td{padding:12px 16px;border-bottom:1px solid #f0ebe3;font-size:14px;color:#333;word-break:break-word}
   .total-row td{font-weight:bold;background:#f9f5f0;font-size:15px}
   .highlight-box{background:#f9f5f0;border-left:3px solid #c9a96e;padding:20px 24px;margin:24px 0}
   .footer{background:#0a0a0a;padding:32px 48px;text-align:center}
@@ -37,6 +37,27 @@ const baseTemplate = (content, preheader = '') => `
   .status-shipped{background:#e8eef4;color:#1a4a8a}
   .status-delivered{background:#c9a96e;color:#fff}
   .warning-box{background:#fff8e8;border-left:3px solid #e8a000;padding:20px 24px;margin:24px 0}
+  .mobile-only{display:none}
+
+  /* ─── Mobile (phones/small tablets) ───────────────────────────────────── */
+  @media only screen and (max-width:600px){
+    .header{padding:28px 20px !important}
+    .header-logo{font-size:22px !important;letter-spacing:5px !important}
+    .header-tagline{font-size:10px !important;letter-spacing:2px !important}
+    .body{padding:28px 20px !important}
+    .footer{padding:24px 20px !important}
+    .greeting{font-size:19px !important}
+    .text{font-size:14px !important}
+    .btn{display:block !important;width:100% !important;padding:15px 24px !important;margin:20px 0 !important;text-align:center}
+    .highlight-box,.warning-box{padding:16px 18px !important;margin:20px 0 !important}
+    .order-table th,.order-table td{padding:8px 6px !important;font-size:12px !important}
+    /* Size/Qty get their own columns on desktop; on narrow screens they're
+       folded into a "mobile-only" line under the product name instead, so
+       no order detail is ever lost, just laid out differently. */
+    .order-table th.size-col,.order-table td.size-col,
+    .order-table th.qty-col,.order-table td.qty-col{display:none !important}
+    .mobile-only{display:block !important}
+  }
 </style>
 </head>
 <body>
@@ -172,15 +193,15 @@ const emailTemplates = {
       <table class="order-table">
         <tr>
           <th>Product</th>
-          <th>Size</th>
-          <th>Qty</th>
+          <th class="size-col">Size</th>
+          <th class="qty-col">Qty</th>
           <th>Price</th>
         </tr>
         ${data.items.map(item => `
         <tr>
-          <td><strong>${item.name}</strong></td>
-          <td>${item.size || '—'}</td>
-          <td>${item.quantity}</td>
+          <td><strong>${item.name}</strong><div class="mobile-only" style="font-size:11px;color:#888;margin-top:4px;font-weight:normal">Size: ${item.size || '—'} &middot; Qty: ${item.quantity}</div></td>
+          <td class="size-col">${item.size || '—'}</td>
+          <td class="qty-col">${item.quantity}</td>
           <td>$${item.price.toFixed(2)}</td>
         </tr>`).join('')}
         <tr class="total-row">
@@ -265,6 +286,16 @@ const emailTemplates = {
       <div class="greeting">Return request received.</div>
       <p class="text">Dear ${data.firstName}, we have received your return request for order #${data.orderNumber}. Our team will review your request within 1-2 business days.</p>
       <center><a href="${process.env.CLIENT_URL}/account/orders/${data._id}" class="btn">View Order Details</a></center>
+    `)
+  }),
+
+  returnCompleted: (data) => ({
+    subject: `Return Processed – #${data.orderNumber}`,
+    html: baseTemplate(`
+      <div class="greeting">Your return has been processed.</div>
+      <p class="text">Dear ${data.firstName}, your return for order #${data.orderNumber} has been received and processed.</p>
+      <p class="text">If payment was processed, a refund will be issued within 5-10 business days to your original payment method.</p>
+      <center><a href="${process.env.CLIENT_URL}/account/orders/${data._id}" class="btn btn-gold">View Order Details</a></center>
     `)
   })
 };

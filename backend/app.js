@@ -12,7 +12,7 @@ if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 600,
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
