@@ -49,6 +49,7 @@ describe('sendTemplateEmail (single flattened data object, matching real call si
     ['orderDelivered', { firstName: 'Amina', ...order }],
     ['orderCancelled', { firstName: 'Amina', ...order }],
     ['returnRequested', { firstName: 'Amina', ...order }],
+    ['returnCompleted', { firstName: 'Amina', ...order }],
   ])('%s does not throw when called with the data shape its call sites actually pass', async (templateName, data) => {
     const result = await sendTemplateEmail(templateName, 'a@b.com', data);
     expect(result.success).toBe(true);
