@@ -23,33 +23,39 @@ async function makeProduct(stock = 10) {
 const shippingAddress = { firstName: 'A', lastName: 'B', address1: '1 St', city: 'C', state: 'S', postalCode: '1', country: 'US' };
 
 describe('POST /api/orders (payment method behavior)', () => {
-  it('creates a cod order as confirmed', async () => {
+  it('creates a cod order as confirmed and decrements stock immediately', async () => {
     const user = await createTestUser();
-    const product = await makeProduct();
+    const product = await makeProduct(10);
     const res = await request(app).post('/api/orders').set(authHeaderFor(user)).send({
       items: [{ product: product._id, name: product.name, quantity: 1, price: 50 }],
       shippingAddress, paymentMethod: 'cod', subtotal: 50, total: 50
     });
     expect(res.status).toBe(201);
     expect(res.body.order.orderStatus).toBe('confirmed');
+    const refreshedProduct = await Product.findById(product._id);
+    expect(refreshedProduct.stock).toBe(9);
+    expect(refreshedProduct.soldCount).toBe(1);
   });
 
-  it('creates a card order as pending_payment', async () => {
+  it('creates a card order as pending_payment without touching stock yet', async () => {
     const user = await createTestUser();
-    const product = await makeProduct();
+    const product = await makeProduct(10);
     const res = await request(app).post('/api/orders').set(authHeaderFor(user)).send({
       items: [{ product: product._id, name: product.name, quantity: 1, price: 50 }],
       shippingAddress, paymentMethod: 'card', subtotal: 50, total: 50
     });
     expect(res.status).toBe(201);
     expect(res.body.order.orderStatus).toBe('pending_payment');
+    const refreshedProduct = await Product.findById(product._id);
+    expect(refreshedProduct.stock).toBe(10);
+    expect(refreshedProduct.soldCount).toBe(0);
   });
 });
 
 describe('confirmOrderPayment', () => {
-  it('marks a pending_payment order confirmed and updates user stats', async () => {
+  it('marks a pending_payment order confirmed, updates user stats, and decrements stock', async () => {
     const user = await createTestUser();
-    const product = await makeProduct();
+    const product = await makeProduct(10);
     const order = await Order.create({
       user: user._id,
       items: [{ product: product._id, name: product.name, quantity: 1, price: 50, totalPrice: 50 }],
@@ -63,11 +69,14 @@ describe('confirmOrderPayment', () => {
     const refreshedUser = await User.findById(user._id);
     expect(refreshedUser.totalOrders).toBe(1);
     expect(refreshedUser.totalSpent).toBe(50);
+    const refreshedProduct = await Product.findById(product._id);
+    expect(refreshedProduct.stock).toBe(9);
+    expect(refreshedProduct.soldCount).toBe(1);
   });
 
-  it('is idempotent: calling it again on an already-confirmed order does not double-count stats or history', async () => {
+  it('is idempotent: calling it again on an already-confirmed order does not double-count stats, history, or stock', async () => {
     const user = await createTestUser();
-    const product = await makeProduct();
+    const product = await makeProduct(10);
     const order = await Order.create({
       user: user._id,
       items: [{ product: product._id, name: product.name, quantity: 1, price: 50, totalPrice: 50 }],
@@ -88,6 +97,10 @@ describe('confirmOrderPayment', () => {
     const confirmedEntries = refreshedOrder.statusHistory.filter((h) => h.status === 'confirmed');
     expect(confirmedEntries.length).toBe(1);
 
+    const refreshedProduct = await Product.findById(product._id);
+    expect(refreshedProduct.stock).toBe(9);
+    expect(refreshedProduct.soldCount).toBe(1);
+
     expect(sendTemplateEmail).toHaveBeenCalledTimes(1);
   });
 
@@ -96,9 +109,9 @@ describe('confirmOrderPayment', () => {
       .rejects.toThrow();
   });
 
-  it('does not double-increment stats when two confirmations race concurrently', async () => {
+  it('does not double-increment stats or stock when two confirmations race concurrently', async () => {
     const user = await createTestUser();
-    const product = await makeProduct();
+    const product = await makeProduct(10);
     const order = await Order.create({
       user: user._id,
       items: [{ product: product._id, name: product.name, quantity: 1, price: 50, totalPrice: 50 }],
@@ -120,6 +133,10 @@ describe('confirmOrderPayment', () => {
     const refreshedOrder = await Order.findById(order._id);
     expect(refreshedOrder.orderStatus).toBe('confirmed');
     expect(refreshedOrder.statusHistory.filter((h) => h.status === 'confirmed')).toHaveLength(1);
+
+    const refreshedProduct = await Product.findById(product._id);
+    expect(refreshedProduct.stock).toBe(9);
+    expect(refreshedProduct.soldCount).toBe(1);
 
     expect(sendTemplateEmail).toHaveBeenCalledTimes(1);
   });

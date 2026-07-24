@@ -52,18 +52,20 @@ exports.createOrder = async (req, res, next) => {
       statusHistory: [{ status: initialStatus, note: 'Order placed', updatedBy: req.user._id }]
     });
 
-    // Update stock
-    for (const item of items) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: -item.quantity, soldCount: item.quantity }
-      });
-    }
-
     // Clear cart
     await Cart.findOneAndUpdate({ user: req.user._id }, { items: [] });
 
     if (initialStatus === 'confirmed') {
-      // COD orders are confirmed immediately — send confirmation now and update stats.
+      // COD orders are confirmed immediately, so stock is committed now. Card/PayPal
+      // orders stay pending_payment and only touch stock once confirmOrderPayment
+      // runs (real payment success) — an abandoned/declined checkout never
+      // decrements stock, so it never needs restoring either.
+      for (const item of items) {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { stock: -item.quantity, soldCount: item.quantity }
+        });
+      }
+
       await User.findByIdAndUpdate(req.user._id, {
         $inc: { totalOrders: 1, totalSpent: total, loyaltyPoints: Math.floor(total) }
       });
@@ -273,6 +275,15 @@ exports.confirmOrderPayment = async (orderId, { paymentStatus = 'paid' } = {}) =
     // concurrent caller may have flipped the status to confirmed after we
     // read `order` but before our own update attempt, so `order` can be stale.
     return await Order.findById(orderId).populate('user', 'firstName lastName email');
+  }
+
+  // Card/PayPal orders skip the stock decrement at creation (see createOrder),
+  // so it happens here instead, gated by the same atomic transition above —
+  // exactly once, only once payment has actually succeeded.
+  for (const item of updated.items) {
+    await Product.findByIdAndUpdate(item.product, {
+      $inc: { stock: -item.quantity, soldCount: item.quantity }
+    });
   }
 
   await User.findByIdAndUpdate(updated.user._id, {
