@@ -6,7 +6,17 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+const isConfigured = () =>
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY && !process.env.CLOUDINARY_API_KEY.includes('your_api_key') &&
+  process.env.CLOUDINARY_API_SECRET && !process.env.CLOUDINARY_API_SECRET.includes('your_api_secret');
+
 const uploadImage = (buffer, folder) => {
+  if (!isConfigured()) {
+    console.log('[CLOUDINARY] Not configured. Returning a mock upload result for folder:', folder);
+    return Promise.resolve({ url: 'https://placehold.co/400x400', publicId: `${folder}/mock-${Date.now()}` });
+  }
+
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       { folder, resource_type: 'image' },
@@ -20,7 +30,7 @@ const uploadImage = (buffer, folder) => {
 };
 
 const deleteImage = async (publicId) => {
-  if (!publicId) return;
+  if (!publicId || !isConfigured()) return;
   await cloudinary.uploader.destroy(publicId);
 };
 
