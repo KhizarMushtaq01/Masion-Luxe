@@ -3,7 +3,9 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { paymentAPI } from '../../services/api'
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '')
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+  : null
 
 const appearance = {
   theme: 'stripe',
@@ -81,6 +83,10 @@ export default function StripeCardForm({ orderId, amount, onPaid }) {
 
   if (!clientSecret) {
     return <div className="h-40 skeleton" />
+  }
+
+  if (!stripePromise) {
+    return <p className="text-xs text-obsidian-400 font-sans">Card payments are not configured in this environment.</p>
   }
 
   return (
