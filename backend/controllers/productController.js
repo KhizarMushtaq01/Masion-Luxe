@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const { Category } = require('../models/index');
 const { uploadImage, deleteImage } = require('../utils/cloudinary');
@@ -70,10 +71,15 @@ exports.getProducts = async (req, res, next) => {
 // @route   GET /api/products/:id
 exports.getProduct = async (req, res, next) => {
   try {
-    const product = await Product.findOne({
-      $or: [{ _id: req.params.id }, { slug: req.params.id }],
-      isActive: true
-    }).populate('category', 'name slug').populate('relatedProducts', 'name images basePrice salePrice slug ratings');
+    const { id } = req.params;
+    // Mongoose eagerly casts every branch of an $or, so an _id clause throws
+    // a CastError on a non-ObjectId slug before the slug branch is even tried.
+    const lookup = mongoose.Types.ObjectId.isValid(id)
+      ? { $or: [{ _id: id }, { slug: id }] }
+      : { slug: id };
+
+    const product = await Product.findOne({ ...lookup, isActive: true })
+      .populate('category', 'name slug').populate('relatedProducts', 'name images basePrice salePrice slug ratings');
 
     if (!product) return res.status(404).json({ success: false, message: 'Product not found.' });
 
