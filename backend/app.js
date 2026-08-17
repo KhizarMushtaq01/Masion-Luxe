@@ -7,6 +7,12 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 
+// Render (and most hosts) terminate TLS at a load balancer and pass the real
+// client IP in X-Forwarded-For. Without this, req.ip is the balancer's address,
+// so every visitor shares a single rate-limit bucket. Trust exactly one hop —
+// trusting all of them would let a client spoof the header to dodge limits.
+app.set('trust proxy', 1);
+
 app.use(helmet());
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 
