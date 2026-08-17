@@ -6,12 +6,22 @@ import { Eye, EyeOff } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import toast from 'react-hot-toast'
 
+// ?redirect= is attacker-controllable, so only same-site paths are honoured.
+// "//evil.com" and "\\evil.com" are both protocol-relative once the browser
+// normalises backslashes, which is how an open redirect sneaks past a naive
+// "starts with /" check.
+function safeRedirect(target) {
+  if (!target || !target.startsWith('/')) return '/'
+  if (/^[/\\]{2}/.test(target)) return '/'
+  return target
+}
+
 export default function SignIn() {
   const [showPw, setShowPw] = useState(false)
   const { login, isLoading } = useAuthStore()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/'
+  const redirect = safeRedirect(searchParams.get('redirect'))
   const { register, handleSubmit, formState: { errors } } = useForm()
 
   const onSubmit = async (data) => {
