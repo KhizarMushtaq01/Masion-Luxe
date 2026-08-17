@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
@@ -57,8 +58,16 @@ app.use('/api/payment', require('./routes/payment'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/settings', require('./routes/settings'));
 
+// Reports on the dependency that actually decides whether requests can be
+// served. Answering OK purely because the process is alive would let the
+// platform keep routing traffic to an instance whose database has gone away.
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  const dbConnected = mongoose.connection.readyState === 1;
+  res.status(dbConnected ? 200 : 503).json({
+    status: dbConnected ? 'OK' : 'DEGRADED',
+    db: dbConnected ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.use((err, req, res, next) => {
