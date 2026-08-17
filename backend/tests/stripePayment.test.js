@@ -76,6 +76,38 @@ describe('POST /api/payment/create-intent', () => {
     expect(res.status).toBe(404);
     expect(mockCreate).not.toHaveBeenCalled();
   });
+
+  describe('when Stripe is not configured', () => {
+    const realKey = process.env.STRIPE_SECRET_KEY;
+    const realEnv = process.env.NODE_ENV;
+    afterEach(() => { process.env.STRIPE_SECRET_KEY = realKey; process.env.NODE_ENV = realEnv; });
+
+    it('503s in production rather than returning a mock client secret', async () => {
+      process.env.STRIPE_SECRET_KEY = 'sk_test_your_stripe_key';
+      process.env.NODE_ENV = 'production';
+      const user = await createTestUser();
+      const order = await makeOrder(user);
+
+      const res = await request(app).post('/api/payment/create-intent').set(authHeaderFor(user))
+        .send({ orderId: order._id.toString() });
+
+      expect(res.status).toBe(503);
+      expect(res.body.success).toBe(false);
+      expect(res.body.clientSecret).toBeUndefined();
+    });
+
+    it('still returns a mock secret outside production so checkout can be exercised', async () => {
+      process.env.STRIPE_SECRET_KEY = 'sk_test_your_stripe_key';
+      const user = await createTestUser();
+      const order = await makeOrder(user);
+
+      const res = await request(app).post('/api/payment/create-intent').set(authHeaderFor(user))
+        .send({ orderId: order._id.toString() });
+
+      expect(res.status).toBe(200);
+      expect(res.body.clientSecret).toMatch(/^mock_client_secret_/);
+    });
+  });
 });
 
 describe('POST /api/payment/stripe/webhook', () => {

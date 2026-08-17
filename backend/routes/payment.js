@@ -4,6 +4,12 @@ const { protect } = require('../middleware/auth');
 const { Order } = require('../models/index');
 const { confirmOrderPayment } = require('../controllers/orderController');
 const paypal = require('@paypal/checkout-server-sdk');
+const { stripeConfigured, paypalConfigured, isProduction } = require('../utils/paymentConfig');
+
+const unavailable = (res, method) => res.status(503).json({
+  success: false,
+  message: `${method} payments are unavailable right now. Please choose another payment method.`
+});
 
 function paypalClient() {
   const environment = process.env.PAYPAL_MODE === 'live'
@@ -22,7 +28,12 @@ router.post('/create-intent', protect, async (req, res) => {
     const order = await Order.findOne({ _id: orderId, user: req.user._id });
     if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
 
-    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your_stripe')) {
+    if (!stripeConfigured()) {
+      // Handing a mock client secret to a real customer just produces a
+      // confusing Stripe.js error and an order that is never paid, so outside
+      // development we say plainly that the method is unavailable.
+      if (isProduction()) return unavailable(res, 'Card');
+
       return res.json({
         success: true,
         clientSecret: 'mock_client_secret_' + Date.now(),
@@ -80,6 +91,8 @@ router.post('/stripe/webhook', async (req, res) => {
 
 router.post('/paypal/create-order', protect, async (req, res) => {
   try {
+    if (!paypalConfigured()) return unavailable(res, 'PayPal');
+
     const { orderId } = req.body;
     const order = await Order.findOne({ _id: orderId, user: req.user._id });
     if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
@@ -99,6 +112,8 @@ router.post('/paypal/create-order', protect, async (req, res) => {
 
 router.post('/paypal/capture-order', protect, async (req, res) => {
   try {
+    if (!paypalConfigured()) return unavailable(res, 'PayPal');
+
     const { paypalOrderId, orderId } = req.body;
 
     const order = await Order.findOne({ _id: orderId, user: req.user._id });
