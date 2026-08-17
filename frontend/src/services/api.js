@@ -1,7 +1,10 @@
 import axios from 'axios'
 
+// In dev this stays '/api' so the Vite proxy handles it. In production the
+// frontend and backend live on different hosts, so VITE_API_URL must point at
+// the deployed backend — there is no proxy in a built bundle.
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 })

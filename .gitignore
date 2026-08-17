@@ -674,7 +674,6 @@ html/
 *.tgz
 *.Rcheck/
 *.pdf
-*.html
 *.tex
 *.log
 *.aux
